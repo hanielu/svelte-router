@@ -71,30 +71,9 @@
     return `https://github.com/your-org/svelte-router/examples/${mode}-${routerType}`;
   };
 
-  const getCurrentFileContent = () => {
-    const examples = codeExamples[mode];
-    if (!examples || !examples[activeTab]) {
-      return `// No ${activeTab} example found for ${mode} mode`;
-    }
-
-    // Add descriptive comments based on file type
-    let description = "";
-    if (activeTab === "router") {
-      description = `Router Configuration - Shows how ${routerType.charAt(0).toUpperCase() + routerType.slice(1)}Router is set up for ${mode} routing`;
-    } else {
-      description = `${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Page - Example of a ${mode} route component`;
-    }
-
-    return `<!-- ${mode.charAt(0).toUpperCase() + mode.slice(1)} Mode with ${routerType.charAt(0).toUpperCase() + routerType.slice(1)}Router -->
-<!-- ${description} -->
-<!-- File: ${activeTab}.svelte -->
-
-${examples[activeTab]}`;
-  };
-
   const copyToClipboard = async () => {
     try {
-      await navigator.clipboard.writeText(getCurrentFileContent());
+      await navigator.clipboard.writeText(codeExamples[mode][activeTab]);
       copied = true;
       setTimeout(() => (copied = false), 2000);
     } catch (err) {
@@ -110,14 +89,14 @@ ${examples[activeTab]}`;
     <CardTitle class="text-lg font-semibold text-card-foreground">
       {mode === "declarative" ? "Declarative" : "Data"} Routing
     </CardTitle>
-    <Button
+    <!-- <Button
       class="bg-foreground hover:bg-foreground/90 text-background rounded-full px-4 py-2 text-sm font-medium"
     >
       <a href={getGitHubUrl()} target="_blank" class="flex items-center gap-2">
         <Github class="w-4 h-4" />
         View Code
       </a>
-    </Button>
+    </Button> -->
   </CardHeader>
   <CardContent class="p-6 space-y-6">
     <!-- Router Description -->
@@ -153,52 +132,72 @@ ${examples[activeTab]}`;
             >
               {#each getOrderedFiles(codeExamples[mode]) as fileName}
                 <TabsTrigger value={fileName} class="capitalize">
-                  {fileName === "router" ? "🔧 Router" : fileName}
+                  {fileName === "router" ? "Router" : fileName}
                 </TabsTrigger>
               {/each}
             </TabsList>
-            <Button
-              onclick={copyToClipboard}
-              size="sm"
-              variant="outline"
-              class="bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700 hover:text-white rounded-lg ml-3"
-            >
-              {#if copied}
-                <Check class="w-3 h-3" />
-              {:else}
-                <Copy class="w-3 h-3" />
-              {/if}
-            </Button>
           </div>
 
           {#each getOrderedFiles(codeExamples[mode]) as fileName}
             <TabsContent value={fileName}>
-              <div
-                class="bg-slate-900 dark:bg-slate-950 rounded-xl overflow-hidden max-h-80 overflow-y-auto"
-              >
-                {#if highlightedCodeExamples[mode][fileName]}
-                  <div class="shiki-container text-sm">
-                    {@html highlightedCodeExamples[mode][fileName]}
-                  </div>
-                {:else}
-                  <!-- Fallback to plain content if highlighting failed -->
-                  <div class="p-4">
-                    <pre class="text-sm text-slate-100">
-                      <code class="font-mono whitespace-pre"
-                        >{codeExamples[mode][fileName] || "No content available"}</code
-                      >
-                    </pre>
-                  </div>
-                {/if}
+              <div class="relative">
+                <!-- Copy button positioned outside the scrollable area -->
+                <Button
+                  onclick={copyToClipboard}
+                  size="sm"
+                  variant="outline"
+                  class="absolute top-3 right-3 z-10 bg-slate-800/90 border-slate-700 text-slate-300 hover:bg-slate-700 hover:text-white rounded-lg"
+                >
+                  {#if copied}
+                    <Check class="w-3 h-3" />
+                  {:else}
+                    <Copy class="w-3 h-3" />
+                  {/if}
+                </Button>
+
+                <div
+                  class="bg-slate-900 dark:bg-slate-950 rounded-xl overflow-hidden max-h-80 overflow-y-auto"
+                >
+                  {#if highlightedCodeExamples[mode][fileName]}
+                    <div class="shiki-container text-sm">
+                      {@html highlightedCodeExamples[mode][fileName]}
+                    </div>
+                  {:else}
+                    <!-- Fallback to plain content if highlighting failed -->
+                    <div class="p-4">
+                      <pre class="text-sm text-slate-100">
+                        <code class="font-mono whitespace-pre"
+                          >{codeExamples[mode][fileName] || "No content available"}</code
+                        >
+                      </pre>
+                    </div>
+                  {/if}
+                </div>
               </div>
             </TabsContent>
           {/each}
         </Tabs>
       {:else}
-        <div class="bg-slate-900 dark:bg-slate-950 rounded-xl p-4">
-          <pre class="text-sm text-slate-100">
-            <code class="font-mono whitespace-pre">// No examples found for {mode} mode</code>
-          </pre>
+        <div class="relative">
+          <!-- Copy button for fallback case -->
+          <Button
+            onclick={copyToClipboard}
+            size="sm"
+            variant="outline"
+            class="absolute top-3 right-3 z-10 bg-slate-800/90 border-slate-700 text-slate-300 hover:bg-slate-700 hover:text-white rounded-lg"
+          >
+            {#if copied}
+              <Check class="w-3 h-3" />
+            {:else}
+              <Copy class="w-3 h-3" />
+            {/if}
+          </Button>
+
+          <div class="bg-slate-900 dark:bg-slate-950 rounded-xl p-4">
+            <pre class="text-sm text-slate-100">
+              <code class="font-mono whitespace-pre">// No examples found for {mode} mode</code>
+            </pre>
+          </div>
         </div>
       {/if}
     </div>

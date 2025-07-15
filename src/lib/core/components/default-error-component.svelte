@@ -18,7 +18,7 @@
 
   $effect(() => {
     if (ENABLE_DEV_WARNINGS) {
-      console.error("Error handled by React Router default ErrorBoundary:", error);
+      console.error("Error handled by @hvniel/svelte-router default ErrorBoundary:", error);
 
       devInfo = `
       <p>💿 Hey developer 👋</p>

@@ -5,7 +5,7 @@ import { highlightCode } from "$internal/utils.js";
 
 export async function load() {
   // Load demo source files as raw text
-  const demoFiles = import.meta.glob("/src/lib/internal/components/pages/**/*.svelte", {
+  const demoFiles = import.meta.glob("/src/internal/components/pages/**/*.svelte", {
     query: "?raw",
     import: "default",
     eager: true,

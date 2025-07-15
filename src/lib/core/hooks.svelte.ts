@@ -288,13 +288,11 @@ export interface NavigateFunction {
 export function useNavigate(): NavigateFunction {
   let { isDataRoute } = RouteContext.current;
   // Conditional usage is OK here because the usage of a data router is static
-  // eslint-disable-next-line react-hooks/rules-of-hooks
   return isDataRoute ? useNavigateStable() : useNavigateUnstable();
 }
 
 const navigateEffectWarning =
-  `You should call navigate() in a React.useEffect(), not when ` +
-  `your component is first rendered.`;
+  `You should call navigate() in a $effect(), not when ` + `your component is first rendered.`;
 
 function useNavigateUnstable(): NavigateFunction {
   invariant(
