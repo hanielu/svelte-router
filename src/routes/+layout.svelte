@@ -7,7 +7,10 @@
   import DarkModeToggle from "$components/dark-mode-toggle.svelte";
   import Hero from "$components/hero.svelte";
   import Showcase from "$components/showcase.svelte";
+  import Metadata from "$components/metadata.svelte";
 </script>
+
+<Metadata />
 
 <div class="min-h-screen bg-background">
   <div class="fixed top-4 right-4 z-50">
