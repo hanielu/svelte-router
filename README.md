@@ -24,6 +24,18 @@ The router supports both **data routing** and **declarative routing** modes, giv
 
 > **Note on Framework Mode**: This port focuses exclusively on data and declarative routing modes for client-side applications. The "framework" mode (equivalent to Remix) is not planned for this library since [SvelteKit](https://kit.svelte.dev/) already provides an exceptional full-stack framework experience for Svelte applications. If you need server-side rendering, file-based routing, or full-stack capabilities, we recommend using SvelteKit instead.
 
+## Table of Contents
+
+- [Quick start](#quick-start)
+- [Routing Modes](#routing-modes)
+  - [Data Routing Mode](#data-routing-mode)
+  - [Declarative Routing Mode](#declarative-routing-mode)
+- [Key Features](#key-features)
+- [Examples](#examples)
+- [Key Differences from React Router](#key-differences-from-react-router)
+- [Core Concepts](#core-concepts)
+- [API Reference](#api-reference)
+
 ## Routing Modes
 
 ### Data Routing Mode
@@ -165,7 +177,40 @@ Declarative routing uses familiar component-based syntax for defining routes:
 
 ## Key Differences from React Router
 
-The main differences lie in how reactive values are handled, since Svelte components use a different reactivity model than React:
+The main differences lie in how reactive values are handled and how route elements are defined, since Svelte uses a different component model than React:
+
+### Component vs Element
+
+In React Router, you can use either `Component` or `element` props for route definitions. In this Svelte port:
+
+- **`Component`**: Works the same as React Router - pass a Svelte component
+- **`element`**: Instead of JSX elements, this accepts Svelte **snippets**
+
+```svelte
+<script>
+  import UserProfile from './UserProfile.svelte';
+</script>
+
+<!-- Using Component (same as React Router) -->
+<Route path="/user/:id" Component={UserProfile} />
+
+<!-- Using element with snippets (Svelte-specific) -->
+<Route path="/user/:id">
+  {#snippet element()}
+    <UserProfile />
+  {/snippet}
+</Route>
+
+<!-- For data routing -->
+const router = createBrowserRouter([
+  {
+    path: "/user/:id",
+    Component: UserProfile, // Component reference
+    // OR
+    element: userPageSnippet, // Snippet reference
+  },
+]);
+```
 
 ### Svelte 5 Reactivity Integration
 
