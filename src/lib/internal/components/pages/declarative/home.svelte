@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { useNavigate, useLocation } from "$lib/index.js";
+  import { useNavigate, useLocation, Link } from "$lib/index.js";
   import { fly } from "svelte/transition";
   import Home from "~icons/lucide/home";
   import ArrowRight from "~icons/lucide/arrow-right";
@@ -29,11 +29,15 @@
     </p>
 
     <div class="flex gap-3">
-      <Button onclick={() => navigate("/profile")} class="flex items-center gap-2">
-        View Profile
-        <ArrowRight class="w-4 h-4" />
-      </Button>
-
+      <Link to="/profile">
+        {#snippet child({ props })}
+          <Button {...props} class="flex items-center gap-2">
+            View Profile
+            <ArrowRight class="w-4 h-4" />
+          </Button>
+        {/snippet}
+      </Link>
+      <!-- or -->
       <Button variant="outline" onclick={() => navigate("/settings")}>Settings</Button>
     </div>
   </div>

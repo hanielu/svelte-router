@@ -13,6 +13,8 @@
   import { stripBasename } from "$lib/core/router/utils.js";
   import { isBrowser, useLinkClickHandler } from "./index.svelte.js";
   import { useHref } from "$lib/core/hooks.svelte.js";
+  import type { Snippet } from "svelte";
+  import { attachRef } from "$lib/utils/index.js";
 
   interface PrefetchHandlers {
     onfocus?: FocusEventHandler<HTMLAnchorElement> | null;
@@ -44,6 +46,8 @@
    * @category Types
    */
   export interface LinkProps extends Omit<HTMLAnchorAttributes, "href"> {
+    child?: Snippet<[{ props: Record<string, unknown> }]>;
+
     /**
     Defines the link discovery behavior
 
@@ -205,10 +209,11 @@
     to,
     preventScrollReset,
     viewTransition,
-    ref = $bindable(),
+    ref = $bindable(null),
     children,
+    child,
     ...rest
-  }: LinkProps & { ref?: HTMLAnchorElement } = $props();
+  }: LinkProps & { ref?: HTMLAnchorElement | null } = $props();
 
   let { basename } = NavigationContext.current;
   let isAbsolute = $derived(typeof to === "string" && ABSOLUTE_URL_REGEX.test(to));
@@ -274,9 +279,26 @@
       internalOnClick(event);
     }
   }
+
+  const mergedProps = $derived({
+    ...rest,
+    href: absoluteHref || href,
+    onclick: isExternal || reloadDocument ? onclick : handleClick,
+    target,
+    "data-discover": !isAbsolute && discover === "render" ? "true" : undefined,
+    ...attachRef<HTMLAnchorElement>(node => (ref = node)),
+  });
 </script>
 
-<a
+{#if child}
+  {@render child({ props: mergedProps })}
+{:else}
+  <a {...mergedProps}>
+    {@render children?.()}
+  </a>
+{/if}
+
+<!-- <a
   {...rest}
   href={absoluteHref || href}
   onclick={isExternal || reloadDocument ? onclick : handleClick}
@@ -285,7 +307,7 @@
   data-discover={!isAbsolute && discover === "render" ? "true" : undefined}
 >
   {@render children?.()}
-</a>
+</a> -->
 
 <!-- 
   @component

@@ -5,7 +5,7 @@ import {
   type Highlighter,
   type BundledLanguage,
   type BundledTheme,
-} from "shiki";
+} from "shiki/bundle/web";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -53,11 +53,14 @@ export async function highlightCode(
   }
 }
 
-// Simple HTML escape function
+// Simple HTML escape function (works in both browser and server)
 function escapeHtml(text: string): string {
-  const div = document.createElement("div");
-  div.textContent = text;
-  return div.innerHTML;
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

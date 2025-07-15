@@ -7,8 +7,6 @@
   import DarkModeToggle from "$components/dark-mode-toggle.svelte";
   import Hero from "$components/hero.svelte";
   import Showcase from "$components/showcase.svelte";
-
-  let { data } = $props();
 </script>
 
 <div class="min-h-screen bg-background">
@@ -18,7 +16,7 @@
 
   <Hero />
 
-  <Showcase codeExamples={data.codeExamples} />
+  <Showcase />
 </div>
 
 <ModeWatcher />

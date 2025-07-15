@@ -4,3 +4,4 @@ export * from "./is.js";
 export * from "./context.js";
 export * from "./types.js";
 export * from "./extract.js";
+export * from "./attach-ref.js";

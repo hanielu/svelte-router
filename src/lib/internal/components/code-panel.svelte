@@ -8,20 +8,24 @@
   import type { DemoMode, RouterType } from "./showcase.svelte";
   import { fade } from "svelte/transition";
   import { getRouterFeatures, getRouterDescription } from "$internal/data.js";
-  import { highlightCode } from "$internal/utils.js";
+  import { page } from "$app/state";
 
   interface CodePanelProps {
     mode: DemoMode;
     routerType: RouterType;
-    codeExamples: Record<string, Record<string, string>>;
   }
 
-  let { mode, routerType, codeExamples }: CodePanelProps = $props();
+  let { mode, routerType }: CodePanelProps = $props();
+
+  const { codeExamples, highlightedCodeExamples } = $derived(
+    page.data as {
+      codeExamples: Record<string, Record<string, string>>;
+      highlightedCodeExamples: Record<string, Record<string, string>>;
+    }
+  );
 
   let copied = $state(false);
   let activeTab = $state("router");
-  let highlightedCode = $state<Record<string, string>>({});
-  let isHighlighting = $state(false);
 
   // Get available files for the current mode, with router first
   const getOrderedFiles = (examples: Record<string, string>) => {
@@ -59,41 +63,6 @@
       // Reset to first available file if current tab doesn't exist
       if (!orderedFiles.includes(activeTab)) {
         activeTab = orderedFiles[0] || "router";
-      }
-    }
-  });
-
-  // Highlight code when mode, activeTab, or codeExamples change
-  $effect(() => {
-    const examples = codeExamples[mode];
-    if (examples && examples[activeTab]) {
-      const cacheKey = `${mode}-${activeTab}`;
-
-      // Check if we already have highlighted code for this combination
-      if (!highlightedCode[cacheKey]) {
-        isHighlighting = true;
-
-        // Get raw code without comments for highlighting
-        const rawCode = examples[activeTab];
-
-        highlightCode(rawCode, "svelte", "github-dark")
-          .then(highlighted => {
-            // Only update if we're still on the same tab
-            if (`${mode}-${activeTab}` === cacheKey) {
-              highlightedCode[cacheKey] = highlighted;
-              isHighlighting = false;
-            }
-          })
-          .catch(error => {
-            console.warn("Failed to highlight code:", error);
-            if (`${mode}-${activeTab}` === cacheKey) {
-              highlightedCode[cacheKey] =
-                `<pre class="shiki"><code>${rawCode.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</code></pre>`;
-              isHighlighting = false;
-            }
-          });
-      } else {
-        isHighlighting = false;
       }
     }
   });
@@ -207,34 +176,19 @@ ${examples[activeTab]}`;
               <div
                 class="bg-slate-900 dark:bg-slate-950 rounded-xl overflow-hidden max-h-80 overflow-y-auto"
               >
-                {#if isHighlighting && fileName === activeTab}
-                  <div class="p-4 text-slate-300 text-sm">
-                    <div class="animate-pulse">Highlighting code...</div>
+                {#if highlightedCodeExamples[mode][fileName]}
+                  <div class="shiki-container text-sm">
+                    {@html highlightedCodeExamples[mode][fileName]}
                   </div>
                 {:else}
-                  {@const cacheKey = `${mode}-${fileName}`}
-                  {#if highlightedCode[cacheKey] && fileName === activeTab}
-                    <div class="shiki-container text-sm">
-                      {@html highlightedCode[cacheKey]}
-                    </div>
-                  {:else if fileName === activeTab}
-                    <div class="p-4">
-                      <pre class="text-sm text-slate-100">
-                        <code class="font-mono whitespace-pre"
-                          >{codeExamples[mode][fileName] || "No content available"}</code
-                        >
-                      </pre>
-                    </div>
-                  {:else}
-                    <!-- Non-active tabs show plain content for now -->
-                    <div class="p-4">
-                      <pre class="text-sm text-slate-100">
-                        <code class="font-mono whitespace-pre"
-                          >{codeExamples[mode][fileName] || "No content available"}</code
-                        >
-                      </pre>
-                    </div>
-                  {/if}
+                  <!-- Fallback to plain content if highlighting failed -->
+                  <div class="p-4">
+                    <pre class="text-sm text-slate-100">
+                      <code class="font-mono whitespace-pre"
+                        >{codeExamples[mode][fileName] || "No content available"}</code
+                      >
+                    </pre>
+                  </div>
                 {/if}
               </div>
             </TabsContent>

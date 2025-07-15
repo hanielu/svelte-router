@@ -10,6 +10,7 @@ import {
   DataRouterStateContext,
   NavigationContext,
   RouteContext,
+  type NavigateOptions,
   type PatchRoutesOnNavigationFunction,
   type RouteObject,
 } from "$lib/core/context.js";
@@ -34,9 +35,13 @@ import {
   type SubmitOptions,
   getFormSubmissionInfo,
   shouldProcessLinkClick,
+  type URLSearchParamsInit,
+  createSearchParams,
+  getSearchParamsForLocation,
 } from "../dom.js";
 import { useLocation, useNavigate, useResolvedPath, useRouteId } from "$lib/core/hooks.svelte.js";
 import type { HTMLAttributeAnchorTarget } from "svelte/elements";
+import { warning } from "$lib/core/router/history.js";
 
 ////////////////////////////////////////////////////////////////////////////////
 //#region Global Stuff
@@ -216,6 +221,11 @@ function deserializeErrors(errors: DataRouter["state"]["errors"]): DataRouter["s
   return serialized;
 }
 
+export type SetURLSearchParams = (
+  nextInit?: URLSearchParamsInit | ((prev: URLSearchParams) => URLSearchParamsInit),
+  navigateOpts?: NavigateOptions
+) => void;
+
 /**
  * Submits a HTML `<form>` to the server without reloading the page.
  */
@@ -387,6 +397,61 @@ export function useFormAction(
   }
 
   return createPath(path);
+}
+
+/**
+  Returns a tuple of the current URL's {@link URLSearchParams} and a function to update them. Setting the search params causes a navigation.
+
+  ```svelte
+  <script>
+    import { useSearchParams } from "@hvniel/svelte-router";
+
+    const [searchParams, setSearchParams] = $derived(useSearchParams());
+    
+    function handleSubmit() {
+      setSearchParams({ q: "new search" });
+    }
+  </script>
+
+  <form onsubmit={handleSubmit}>
+    <input name="q" value={searchParams.get("q") || ""} />
+    <button type="submit">Search</button>
+  </form>
+  ```
+
+  @category Hooks
+ */
+export function useSearchParams(
+  defaultInit?: URLSearchParamsInit
+): [URLSearchParams, SetURLSearchParams] {
+  warning(
+    typeof URLSearchParams !== "undefined",
+    `You cannot use the \`useSearchParams\` hook in a browser that does not ` +
+      `support the URLSearchParams API. If you need to support Internet ` +
+      `Explorer 11, we recommend you load a polyfill such as ` +
+      `https://github.com/ungap/url-search-params.`
+  );
+
+  let defaultSearchParams = createSearchParams(defaultInit);
+  let hasSetSearchParams = false;
+
+  let location = useLocation();
+  let searchParams =
+    // Only merge in the defaults if we haven't yet called setSearchParams.
+    // Once we call that we want those to take precedence, otherwise you can't
+    // remove a param with setSearchParams({}) if it has an initial value
+    getSearchParamsForLocation(location.search, hasSetSearchParams ? null : defaultSearchParams);
+
+  let navigate = useNavigate();
+  let setSearchParams: SetURLSearchParams = (nextInit, navigateOptions) => {
+    const newSearchParams = createSearchParams(
+      typeof nextInit === "function" ? nextInit(searchParams) : nextInit
+    );
+    hasSetSearchParams = true;
+    navigate("?" + newSearchParams, navigateOptions);
+  };
+
+  return [searchParams, setSearchParams];
 }
 
 /**

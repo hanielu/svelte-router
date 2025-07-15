@@ -9,11 +9,6 @@
   import RouterSelector from "./router-selector.svelte";
   import { fly } from "svelte/transition";
 
-  interface ShowcaseProps {
-    codeExamples: Record<string, Record<string, string>>;
-  }
-
-  let { codeExamples }: ShowcaseProps = $props();
   let routerType: RouterType = $state("browser");
   let activeTab: DemoMode = $state("declarative");
 </script>
@@ -25,11 +20,11 @@
         <h2 class="text-3xl font-bold text-foreground">Routing Patterns</h2>
       </div>
 
-      <div class="flex items-center justify-between mb-8">
-        <div class="bg-card border border-border p-1 rounded-xl">
+      <div class="flex flex-col gap-4 mb-8 sm:flex-row sm:items-center sm:justify-between">
+        <div class="bg-card border border-border p-1 rounded-xl w-fit mx-auto sm:mx-0">
           <button
             class={[
-              "rounded-lg px-6 py-2 text-sm font-medium transition-colors",
+              "rounded-lg px-4 py-2 text-sm font-medium transition-colors sm:px-6",
               activeTab === "declarative"
                 ? "bg-foreground text-background"
                 : "text-muted-foreground hover:text-foreground",
@@ -40,7 +35,7 @@
           </button>
           <button
             class={[
-              "rounded-lg px-6 py-2 text-sm font-medium transition-colors",
+              "rounded-lg px-4 py-2 text-sm font-medium transition-colors sm:px-6",
               activeTab === "data"
                 ? "bg-foreground text-background"
                 : "text-muted-foreground hover:text-foreground",
@@ -51,12 +46,14 @@
           </button>
         </div>
 
-        <RouterSelector bind:routerType />
+        <div class="flex justify-center sm:justify-end">
+          <RouterSelector bind:routerType />
+        </div>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <DemoPanel mode={activeTab} {routerType} />
-        <CodePanel mode={activeTab} {routerType} {codeExamples} />
+        <CodePanel mode={activeTab} {routerType} />
       </div>
     </div>
   </div>

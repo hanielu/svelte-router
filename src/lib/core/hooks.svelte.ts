@@ -383,6 +383,56 @@ function useNavigateStable(): NavigateFunction {
   return navigate;
 }
 
+/**
+  Revalidate the data on the page for reasons outside of normal data mutations like window focus or polling on an interval.
+
+  ```svelte
+  <script>
+    import { useRevalidator } from "@hvniel/svelte-router";
+
+    function useFakeWindowFocus(callback) {
+      $effect(() => {
+        function handleFocus() {
+          callback();
+        }
+        window.addEventListener('focus', handleFocus);
+        return () => window.removeEventListener('focus', handleFocus);
+      });
+    }
+
+    const revalidator = useRevalidator();
+    
+    useFakeWindowFocus(() => {
+      revalidator.revalidate();
+    });
+  </script>
+
+  <div hidden={revalidator.state === "idle"}>
+    Revalidating...
+  </div>
+  ```
+
+  Note that page data is already revalidated automatically after actions. If you find yourself using this for normal CRUD operations on your data in response to user interactions, you're probably not taking advantage of the other APIs like {@link useFetcher}, {@link Form}, {@link useSubmit} that do this automatically.
+
+  @category Hooks
+ */
+export function useRevalidator(): {
+  revalidate: () => Promise<void>;
+  state: "idle" | "loading";
+} {
+  let dataRouterContext = useDataRouterContext(DataRouterHook.UseRevalidator);
+  let state = useDataRouterState(DataRouterStateHook.UseRevalidator);
+
+  const revalidate = async () => {
+    await dataRouterContext.current!.router.revalidate();
+  };
+
+  return {
+    revalidate,
+    state: state.current!.revalidation,
+  };
+}
+
 const alreadyWarned: Record<string, boolean> = {};
 export function warningOnce(key: string, cond: boolean, message: string) {
   if (!cond && !alreadyWarned[key]) {
