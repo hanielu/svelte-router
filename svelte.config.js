@@ -18,9 +18,9 @@ const config = {
     adapter: adapter(),
 
     alias: {
-      $ui: "./src/lib/internal/ui",
-      $components: "./src/lib/internal/components",
-      $internal: "./src/lib/internal",
+      $ui: "./src/internal/ui",
+      $components: "./src/internal/components",
+      $internal: "./src/internal",
     },
   },
 };

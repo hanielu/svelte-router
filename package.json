@@ -5,7 +5,7 @@
   "author": "Haniel Ubogu <https://github.com/HanielU>",
   "repository": {
     "type": "git",
-    "url": "https://github.com/HanielU/svelte-router"
+    "url": "git+https://github.com/HanielU/svelte-router.git"
   },
   "scripts": {
     "dev": "vite dev",
