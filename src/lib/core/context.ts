@@ -1,0 +1,195 @@
+import type { Component, Snippet } from "svelte";
+import type { History, Action as NavigationType, Location, To } from "./router/history.js";
+import type { RelativeRoutingType, Router, StaticHandlerContext } from "./router/router.js";
+import type {
+  AgnosticIndexRouteObject,
+  AgnosticNonIndexRouteObject,
+  AgnosticPatchRoutesOnNavigationFunction,
+  AgnosticPatchRoutesOnNavigationFunctionArgs,
+  AgnosticRouteMatch,
+  LazyRouteDefinition,
+  TrackedPromise,
+} from "./router/utils.js";
+import { Context } from "../utils/index.js";
+import { SvelteMap } from "svelte/reactivity";
+
+// Create react-specific types from the agnostic types in @remix-run/router to
+// export from react-router
+export interface IndexRouteObject {
+  caseSensitive?: AgnosticIndexRouteObject["caseSensitive"];
+  path?: AgnosticIndexRouteObject["path"];
+  id?: AgnosticIndexRouteObject["id"];
+  unstable_middleware?: AgnosticIndexRouteObject["unstable_middleware"];
+  loader?: AgnosticIndexRouteObject["loader"];
+  action?: AgnosticIndexRouteObject["action"];
+  hasErrorBoundary?: AgnosticIndexRouteObject["hasErrorBoundary"];
+  shouldRevalidate?: AgnosticIndexRouteObject["shouldRevalidate"];
+  handle?: AgnosticIndexRouteObject["handle"];
+  index: true;
+  children?: undefined;
+  element?: Snippet | null;
+  hydrateFallbackElement?: Snippet | null;
+  errorElement?: Snippet | null;
+  Component?: Component | null;
+  HydrateFallback?: Component | null;
+  ErrorBoundary?: Component | null;
+  lazy?: LazyRouteDefinition<RouteObject>;
+}
+
+export interface NonIndexRouteObject {
+  caseSensitive?: AgnosticNonIndexRouteObject["caseSensitive"];
+  path?: AgnosticNonIndexRouteObject["path"];
+  id?: AgnosticNonIndexRouteObject["id"];
+  unstable_middleware?: AgnosticNonIndexRouteObject["unstable_middleware"];
+  loader?: AgnosticNonIndexRouteObject["loader"];
+  action?: AgnosticNonIndexRouteObject["action"];
+  hasErrorBoundary?: AgnosticNonIndexRouteObject["hasErrorBoundary"];
+  shouldRevalidate?: AgnosticNonIndexRouteObject["shouldRevalidate"];
+  handle?: AgnosticNonIndexRouteObject["handle"];
+  index?: false;
+  children?: RouteObject[];
+  element?: Snippet | null;
+  hydrateFallbackElement?: Snippet | null;
+  errorElement?: Snippet | null;
+  Component?: Component | null;
+  HydrateFallback?: Component | null;
+  ErrorBoundary?: Component | null;
+  lazy?: LazyRouteDefinition<RouteObject>;
+}
+
+export type RouteObject = IndexRouteObject | NonIndexRouteObject;
+
+export type DataRouteObject = RouteObject & {
+  children?: DataRouteObject[];
+  id: string;
+};
+
+export interface RouteMatch<
+  ParamKey extends string = string,
+  RouteObjectType extends RouteObject = RouteObject
+> extends AgnosticRouteMatch<ParamKey, RouteObjectType> {}
+
+export interface DataRouteMatch extends RouteMatch<string, DataRouteObject> {}
+
+export type PatchRoutesOnNavigationFunctionArgs = AgnosticPatchRoutesOnNavigationFunctionArgs<
+  RouteObject,
+  RouteMatch
+>;
+
+export type PatchRoutesOnNavigationFunction = AgnosticPatchRoutesOnNavigationFunction<
+  RouteObject,
+  RouteMatch
+>;
+
+export interface DataRouterContextObject
+  // Omit `future` since those can be pulled from the `router`
+  // `NavigationContext` needs future since it doesn't have a `router` in all cases
+  extends Omit<NavigationContextObject, "future"> {
+  router: Router;
+  staticContext?: StaticHandlerContext;
+}
+
+export const DataRouterContext = Context.boxed<DataRouterContextObject | null>(
+  "DataRouterContext",
+  null
+);
+
+export const DataRouterStateContext = Context.boxed<Router["state"] | null>(
+  "DataRouterStateContext",
+  null
+);
+
+export type ViewTransitionContextObject =
+  | {
+      isTransitioning: false;
+    }
+  | {
+      isTransitioning: true;
+      flushSync: boolean;
+      currentLocation: Location;
+      nextLocation: Location;
+    };
+
+export const ViewTransitionContext = Context.boxed<ViewTransitionContextObject>(
+  "ViewTransitionContext",
+  { isTransitioning: false }
+);
+
+// TODO: (v7) Change the useFetcher data from `any` to `unknown`
+export type FetchersContextObject = SvelteMap<string, any>;
+
+export const FetchersContext = new Context<FetchersContextObject>(
+  "FetchersContext",
+  new SvelteMap()
+);
+
+export const AwaitContext = Context.boxed<TrackedPromise | null>("AwaitContext", null);
+
+export interface NavigateOptions {
+  /** Replace the current entry in the history stack instead of pushing a new one */
+  replace?: boolean;
+  /** Adds persistent client side routing state to the next location */
+  state?: any;
+  /** If you are using {@link https://api.reactrouter.com/v7/functions/react_router.ScrollRestoration.html <ScrollRestoration>}, prevent the scroll position from being reset to the top of the window when navigating */
+  preventScrollReset?: boolean;
+  /** Defines the relative path behavior for the link. "route" will use the route hierarchy so ".." will remove all URL segments of the current route pattern while "path" will use the URL path so ".." will remove one URL segment. */
+  relative?: RelativeRoutingType;
+  /** Wraps the initial state update for this navigation in a {@link https://react.dev/reference/react-dom/flushSync ReactDOM.flushSync} call instead of the default {@link https://react.dev/reference/react/startTransition React.startTransition} */
+  flushSync?: boolean;
+  /** Enables a {@link https://developer.mozilla.org/en-US/docs/Web/API/View_Transitions_API View Transition} for this navigation by wrapping the final state update in `document.startViewTransition()`. If you need to apply specific styles for this view transition, you will also need to leverage the {@link https://api.reactrouter.com/v7/functions/react_router.useViewTransitionState.html useViewTransitionState()} hook.  */
+  viewTransition?: boolean;
+}
+
+/**
+ * A Navigator is a "location changer"; it's how you get to different locations.
+ *
+ * Every history instance conforms to the Navigator interface, but the
+ * distinction is useful primarily when it comes to the low-level `<Router>` API
+ * where both the location and a navigator must be provided separately in order
+ * to avoid "tearing" that may occur in a suspense-enabled app if the action
+ * and/or location were to be read directly from the history instance.
+ */
+export interface Navigator {
+  createHref: History["createHref"];
+  // Optional for backwards-compat with Router/HistoryRouter usage (edge case)
+  encodeLocation?: History["encodeLocation"];
+  go: History["go"];
+  push(to: To, state?: any, opts?: NavigateOptions): void;
+  replace(to: To, state?: any, opts?: NavigateOptions): void;
+}
+
+interface NavigationContextObject {
+  basename: string;
+  navigator: Navigator;
+  static: boolean;
+  // TODO: Re-introduce a singular `FutureConfig` once we land our first
+  // future.unstable_ or future.v8_ flag
+  future: {};
+}
+
+export const NavigationContext = Context.boxed<NavigationContextObject>("NavigationContext");
+
+interface LocationContextObject {
+  location: Location;
+  navigationType: NavigationType;
+}
+
+export const LocationContext = Context.boxed<LocationContextObject>("LocationContext", null!);
+
+export interface RouteContextObject {
+  outlet: Snippet | null;
+  matches: RouteMatch[];
+  isDataRoute: boolean;
+}
+
+export const RouteContext = Context.boxed<RouteContextObject>("RouteContext", {
+  outlet: null,
+  matches: [],
+  isDataRoute: false,
+});
+
+export const RouteErrorContext = Context.boxed<any>("RouteErrorContext", null);
+
+// Provided by the build system
+// declare const __DEV__: boolean;
+export const ENABLE_DEV_WARNINGS = true;
