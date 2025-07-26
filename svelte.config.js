@@ -21,6 +21,8 @@ const config = {
       $ui: "./src/internal/ui",
       $components: "./src/internal/components",
       $internal: "./src/internal",
+      "svelte-router": "./src/lib/index.js",
+      "test-utils": "./src/lib/__tests__/test-utils.js",
     },
   },
 };

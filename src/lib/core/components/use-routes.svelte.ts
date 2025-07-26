@@ -50,7 +50,7 @@ export function useRoutes(
  */
 export function useRoutesImpl(
   children: Snippet | undefined,
-  routes: RouteObject[],
+  routes: RouteObject[] = [],
   locationArg?: Partial<Location> | string,
   _dataRouterState?: MaybeGetter<DataRouter["state"]>,
   future?: DataRouter["future"]
@@ -107,7 +107,26 @@ export function useRoutesImpl(
     }
   });
 
-  const matches = $derived(matchRoutes(routes, { pathname: remainingPathname }) || []);
+  const matches = $derived(matchRoutes(routes, { pathname: remainingPathname }));
+
+  $effect(() => {
+    if (ENABLE_DEV_WARNINGS) {
+      warning(
+        parentRoute || matches != null,
+        `No routes matched location "${location.pathname}${location.search}${location.hash}" `
+      );
+
+      warning(
+        matches == null ||
+          matches[matches.length - 1].route.element !== undefined ||
+          matches[matches.length - 1].route.Component !== undefined ||
+          matches[matches.length - 1].route.lazy !== undefined,
+        `Matched leaf route at location "${location.pathname}${location.search}${location.hash}" ` +
+          `does not have an element or Component. This means it will render an <Outlet /> with a ` +
+          `null value by default resulting in an "empty" page.`
+      );
+    }
+  });
 
   /* --------------------------------------------------------------
    * State kept across navigations - MUST be outside the snippet!
@@ -342,7 +361,7 @@ export function useRoutesImpl(
      * Main function to handle route changes by mounting/unmounting components efficiently.
      * Uses diffing to only update components that actually changed.
      */
-    function loadAndMountComponents(currentMatches: RouteMatch[]) {
+    function loadAndMountComponents(currentMatches: RouteMatch[] | null) {
       // If no matches (e.g., 404), just unmount everything
       if (!currentMatches || currentMatches.length === 0) {
         unmountComponentsFromLevel(0);

@@ -309,8 +309,16 @@ function useNavigateUnstable(): NavigateFunction {
 
   let routePathnamesJson = JSON.stringify(getResolveToMatches(matches));
 
-  let activeRef = false;
-  $effect.pre(() => {
+  // this being a $state variable allows child components to access the navigate function
+  // so if useNavigate() is called in a parent component,
+  // child components can access the navigate function in an effect
+  // which reruns when the parent component mounts
+  let activeRef = $state(false);
+
+  // making this an $effect.pre() instead of a $effect() causes the navigate function to run
+  // before the component has mounted, which isn't what we want, I think.
+  // TBD: figure out if this is a problem
+  $effect(() => {
     activeRef = true;
   });
 
@@ -359,8 +367,16 @@ function useNavigateStable(): NavigateFunction {
   let { router } = useDataRouterContext(DataRouterHook.UseNavigateStable).current!;
   let id = useCurrentRouteId(DataRouterStateHook.UseNavigateStable);
 
-  let activeRef = false;
-  $effect.pre(() => {
+  // this being a $state variable allows child components to access the navigate function
+  // so if useNavigate() is called in a parent component,
+  // child components can access the navigate function in an effect
+  // which reruns when the parent component mounts
+  let activeRef = $state(false);
+
+  // making this an $effect.pre() instead of a $effect() causes the navigate function to run
+  // before the component has mounted, which isn't what we want, I think.
+  // TBD: figure out if this is a problem
+  $effect(() => {
     activeRef = true;
   });
 
