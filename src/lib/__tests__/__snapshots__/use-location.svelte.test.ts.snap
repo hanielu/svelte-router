@@ -1,0 +1,32 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`useLocation > returns the scoped location object when nested in <Routes location> > 
+      <div>
+        <pre>
+          {"pathname":"/home","search":"?the=search","hash":"#the-hash","state":null,"key":"default"}
+        </pre>
+        <pre>
+          {"pathname":"/scoped","search":"?scoped=search","hash":"#scoped-hash","state":null,"key":"default"}
+        </pre>
+      </div>
+     1`] = `
+<div>
+  <!---->
+  
+  <!---->
+  <pre>
+    {"pathname":"/home","search":"?the=search","hash":"#the-hash","state":null,"key":"default"}
+  </pre>
+  
+  <!---->
+   
+  <!---->
+  
+  <!---->
+  <pre>
+    {"pathname":"/scoped","search":"?scoped=search","hash":"#scoped-hash","state":null,"key":"default"}
+  </pre>
+  
+  <!---->
+</div>
+`;
