@@ -36,11 +36,7 @@ export async function load() {
 
     // Highlight the code during prerender
     try {
-      highlightedCodeExamples[mode][name] = await highlightCode(
-        rawContent,
-        "svelte",
-        "github-dark"
-      );
+      highlightedCodeExamples[mode][name] = await highlightCode(rawContent);
     } catch (error) {
       console.warn(`Failed to highlight ${mode}/${name}:`, error);
       // Fallback to escaped HTML

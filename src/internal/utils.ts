@@ -1,41 +1,41 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import {
-  createHighlighter,
-  type Highlighter,
-  type BundledLanguage,
-  type BundledTheme,
-} from "shiki/bundle/web";
+// import {
+//   createHighlighter,
+//   type Highlighter,
+//   type BundledLanguage,
+//   type BundledTheme,
+// } from "shiki/bundle/web";
+
+import { createHighlighterCore, type HighlighterCore } from "shiki/core";
+import { createOnigurumaEngine } from "shiki/engine/oniguruma";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
 // Shiki highlighter instance
-let highlighter: Highlighter | null = null;
+let highlighter: HighlighterCore | null = null;
 
 // Initialize Shiki highlighter
 async function initHighlighter() {
   if (!highlighter) {
-    highlighter = await createHighlighter({
-      themes: ["github-dark", "github-light"],
-      langs: ["svelte", "typescript", "javascript", "html", "css"],
+    highlighter = await createHighlighterCore({
+      themes: [import("shiki/themes/github-dark.mjs")],
+      langs: [import("shiki/langs/svelte.mjs")],
+      engine: createOnigurumaEngine(import("shiki/wasm")),
     });
   }
   return highlighter;
 }
 
 // Highlight code with Shiki
-export async function highlightCode(
-  code: string,
-  lang: BundledLanguage = "svelte",
-  theme: BundledTheme = "github-dark"
-): Promise<string> {
+export async function highlightCode(code: string): Promise<string> {
   try {
     const hl = await initHighlighter();
     return hl.codeToHtml(code, {
-      lang,
-      theme,
+      lang: "svelte",
+      theme: "github-dark",
       transformers: [
         {
           name: "remove-background",
