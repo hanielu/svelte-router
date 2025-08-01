@@ -16,6 +16,9 @@ export default defineConfig(({ mode }) => {
           fenceEnd: "// sd",
         }),
     ],
+    build: {
+      minify: mode === "development" ? false : true,
+    },
     test: {
       projects: [
         {
