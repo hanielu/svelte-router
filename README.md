@@ -2,7 +2,7 @@
 
 A powerful Svelte 5 port of React Router - the modern, lightweight, performant, and accessible routing library for single-page applications.
 
-> **🚧 Work in Progress**: This project is actively being developed. Issues, feature requests, and pull requests are welcome! Help us make this the best routing solution for Svelte 5.
+> **🚧 Work in Progress**: This project is actively being developed. Issues, feature requests, and pull requests are welcome! Help us make this the best react-router port for Svelte 5.
 
 ## Quick start
 
