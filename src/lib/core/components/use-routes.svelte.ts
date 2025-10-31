@@ -136,7 +136,7 @@ export function useRoutesImpl(
     match: RouteMatch;
     unmountRef?: any;
     level: number; // depth in the route hierarchy
-    routeContext: { current: RouteContextObject };
+    routeContext: RouteContextObject;
   }
 
   const mountedComponents: MountedComponent[] = [];
@@ -192,7 +192,7 @@ export function useRoutesImpl(
       outlet: Snippet | null,
       matchesSlice: RouteMatch[],
       index: number,
-      routeContext: { current: RouteContextObject }
+      routeContext: RouteContextObject
     ): {
       component: typeof RenderedRoute | typeof RenderErrorBoundary;
       props: any;
@@ -223,20 +223,16 @@ export function useRoutesImpl(
       const shouldWrap =
         dataRouterState && (match.route.ErrorBoundary || match.route.errorElement || index === 0);
 
-      routeContext.current = {
-        outlet,
-        matches: matchesSlice,
-        isDataRoute: dataRouterState != null,
-      };
+      routeContext.outlet = outlet;
+      routeContext.matches = matchesSlice;
+      routeContext.isDataRoute = dataRouterState != null;
 
       // return object include routeContext
       const commonReturn = {
         component: RenderedRoute,
         props: {
           match,
-          get routeContext() {
-            return routeContext.current;
-          },
+          routeContext,
           children: childrenSnippet,
         },
       };
@@ -248,11 +244,7 @@ export function useRoutesImpl(
       const renderedRouteSnippet = snippet(anchor => {
         RenderedRoute(anchor as any, {
           match,
-          routeContext: {
-            outlet,
-            matches: matchesSlice,
-            isDataRoute: dataRouterState != null,
-          },
+          routeContext,
           children: childrenSnippet,
         });
       });
@@ -264,9 +256,7 @@ export function useRoutesImpl(
           revalidation: dataRouterState!.revalidation,
           error,
           component: errorElement!,
-          get routeContext() {
-            return routeContext.current;
-          },
+          routeContext,
           children: renderedRouteSnippet,
         },
       };
@@ -289,7 +279,11 @@ export function useRoutesImpl(
         outletSnippet = snippet(anchor => mountMatchAtLevel(index + 1, anchor, level + 1, matches));
       }
 
-      const routeContext = $state<{ current: RouteContextObject }>({ current: null! });
+      const routeContext = $state<RouteContextObject>({
+        outlet: null,
+        matches: [],
+        isDataRoute: false,
+      });
 
       const { component, props } = createRenderedSnippet(
         match,
@@ -316,7 +310,11 @@ export function useRoutesImpl(
         outletSnippet = snippet(anchor => mountMatchAtLevel(1, anchor, 1, matches));
       }
 
-      const routeContext = $state<{ current: RouteContextObject }>({ current: null! });
+      const routeContext = $state<RouteContextObject>({
+        outlet: null,
+        matches: [],
+        isDataRoute: false,
+      });
       const { component, props } = createRenderedSnippet(
         matches[0],
         outletSnippet,
@@ -378,11 +376,13 @@ export function useRoutesImpl(
         // Partial update - refresh parent's outlet to show new child routes
         const parentComponent = mountedComponents[firstDifferentLevel - 1];
 
-        if (parentComponent.match.route.children?.length) {
-          // Update parent's outlet with new route matches
-          parentComponent.routeContext.current.outlet = snippet(anchor =>
+        if (parentComponent && parentComponent.match.route.children?.length) {
+          // Update parent's outlet with new route matches (reactively)
+          parentComponent.routeContext.outlet = snippet(anchor =>
             mountMatchAtLevel(firstDifferentLevel, anchor, firstDifferentLevel, currentMatches)
           );
+          // Keep matches in sync for consumers relying on RouteContext.matches
+          parentComponent.routeContext.matches = currentMatches.slice(0, firstDifferentLevel);
         }
       }
     }

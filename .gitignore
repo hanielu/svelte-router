@@ -1,5 +1,6 @@
 node_modules
 llms/
+.cursor/
 
 # Output
 .output

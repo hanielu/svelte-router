@@ -30,7 +30,12 @@
     dataRouterContext.staticContext._deepestRenderedBoundaryId = match.route.id;
   }
 
-  RouteContext.setWith(() => routeContext);
+  // Read specific fields to ensure reactivity when they change
+  RouteContext.setWith(() => ({
+    outlet: routeContext.outlet,
+    matches: routeContext.matches,
+    isDataRoute: routeContext.isDataRoute,
+  }));
 </script>
 
 {@render children?.()}

@@ -109,6 +109,15 @@
       route.children = children;
     }
 
+    // This done in an effect because in Svelte,
+    // effects run from innermost to outermost components.
+    // This ordering allows:
+    // 1. Child routes to register themselves with their parent first
+    // 2. Parent routes to collect their children before registering themselves
+    // 3. The full route tree to be built from bottom-up
+    //
+    // The parent component must read its children's routes from within an effect
+    // to ensure the children have completed registration first.
     addRouteToParent(route);
   });
 </script>
