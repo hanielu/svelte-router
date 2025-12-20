@@ -150,11 +150,9 @@ export function useRoutesImpl(
     /* ----------------- helpers for diffing and patching route changes -----------------------*/
 
     const isSameMatch = (a: RouteMatch, b: RouteMatch) => {
-      return (
-        a.route.id === b.route.id &&
-        a.pathname === b.pathname &&
-        JSON.stringify(a.params) === JSON.stringify(b.params)
-      );
+      // Compare only route identity - pathname and params are reactive within
+      // the mounted component, so they don't require remounting
+      return a.route.id != null ? a.route.id === b.route.id : a.route === b.route;
     };
 
     /**

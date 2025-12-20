@@ -222,7 +222,7 @@ describe("useNavigate", () => {
           const Component = html`<script>
 					let {Home, Page} = $props();
 					let navigate = useNavigate();
-					let location = useLocation();
+					let location = $derived(useLocation());
 					</script>
 					<button onclick={() => navigate(location.pathname === "/" ? "/page" : "/")}>
 						Navigate from RouterProvider
