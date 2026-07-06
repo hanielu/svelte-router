@@ -107,7 +107,35 @@ export function useRoutesImpl(
     }
   });
 
-  const matches = $derived(matchRoutes(routes, { pathname: remainingPathname }));
+  const rawMatches = $derived(matchRoutes(routes, { pathname: remainingPathname }));
+
+  // Merge parent params and resolve pathnames to absolute values so descendant
+  // <Routes> (or useRoutes) inherit the params/pathname matched by ancestor
+  // routes, matching the behaviour of the legacy _renderMatches path.
+  const matches = $derived.by(() => {
+    if (!rawMatches) return rawMatches;
+
+    return rawMatches.map(match =>
+      Object.assign({}, match, {
+        params: Object.assign({}, parentParams, match.params),
+        pathname: joinPaths([
+          parentPathnameBase,
+          navigator.encodeLocation
+            ? navigator.encodeLocation(match.pathname).pathname
+            : match.pathname,
+        ]),
+        pathnameBase:
+          match.pathnameBase === "/"
+            ? parentPathnameBase
+            : joinPaths([
+                parentPathnameBase,
+                navigator.encodeLocation
+                  ? navigator.encodeLocation(match.pathnameBase).pathname
+                  : match.pathnameBase,
+              ]),
+      })
+    );
+  });
 
   $effect(() => {
     if (ENABLE_DEV_WARNINGS) {
@@ -366,6 +394,17 @@ export function useRoutesImpl(
 
       const firstDifferentLevel = findFirstDifferentLevel(currentMatches);
       unmountComponentsFromLevel(firstDifferentLevel);
+
+      // Routes that share the same identity are intentionally kept mounted
+      // (e.g. /example/1 -> /example/2). Their pathname/params still change,
+      // so re-sync each surviving level's reactive match slice to propagate
+      // the new params to consumers like useParams()/useLocation().
+      for (let level = 0; level < firstDifferentLevel; level++) {
+        const mounted = mountedComponents[level];
+        if (!mounted) continue;
+        mounted.match = currentMatches[level];
+        mounted.routeContext.matches = currentMatches.slice(0, level + 1);
+      }
 
       if (mountedComponents.length === 0) {
         // First time mounting or complete remount
