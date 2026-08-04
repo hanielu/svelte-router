@@ -1,4 +1,4 @@
-import { html, type InlineSnippet } from "@hvniel/vite-plugin-svelte-inline-component";
+import { html, scope, type InlineSnippet } from "@hvniel/vite-plugin-svelte-inline-component";
 
 /**
  * Test utilities for Svelte components in vitest environment.
@@ -266,4 +266,4 @@ export function createClickGetter(locator: Locator): () => void | Promise<void> 
   return () => element.__click[0](null, element.__click[1]);
 }
 
-export { element, html };
+export { element, html, scope };

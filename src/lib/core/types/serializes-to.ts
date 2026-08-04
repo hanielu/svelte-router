@@ -1,4 +1,4 @@
-import type { Equal, Expect } from "./utils";
+import type { Equal, Expect } from "./utils.js";
 
 /**
  * A brand that can be applied to a type to indicate that it will serialize

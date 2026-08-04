@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { render } from "vitest-browser-svelte";
-import { html } from "test-utils";
+import { html, scope } from "test-utils";
 // svelte:defs
 import { MemoryRouter, Routes, Route } from "svelte-router";
 // sd
@@ -31,16 +31,12 @@ describe("A <Route>", () => {
     const HomeComponent = html`<h1>Home</h1>`;
 
     const screen = render(
-      html`
-      <script>
-        let {HomeComponent} = $props();
-      </script>
+      scope(HomeComponent).html`
       <MemoryRouter initialEntries={["/home"]}>
         <Routes>
           <Route path="home" Component={HomeComponent} />
         </Routes>
-      </MemoryRouter>`,
-      { HomeComponent }
+      </MemoryRouter>`
     );
 
     expect(screen.container.firstElementChild).toMatchInlineSnapshot(`

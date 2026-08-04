@@ -160,10 +160,12 @@ export function createMemoryRouter(
 }
 
 export { default as Outlet, useOutletContext } from "./outlet.svelte";
+export { default as Navigate } from "./navigate.svelte";
 export { default as Route } from "./route.svelte";
 export { default as Routes } from "./routes.svelte";
 export { default as RouterProvider } from "./router-provider.svelte";
 
 export type { RouteProps } from "./route.svelte";
+export type { NavigateProps } from "./navigate.svelte";
 export type { RoutesProps } from "./routes.svelte";
 export { useRoutes } from "./use-routes.svelte";

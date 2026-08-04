@@ -1,16 +1,16 @@
-import type { MetaDescriptor } from "../dom/ssr/routeModules";
-import type { Location } from "../router/history";
-import type { LinkDescriptor } from "../router/links";
+import type { MetaDescriptor } from "../dom/ssr/routeModules.js";
+import type { Location } from "../router/history.js";
+import type { LinkDescriptor } from "../router/links.js";
 import type {
   unstable_MiddlewareNextFunction,
   unstable_RouterContextProvider,
-} from "../router/utils";
-import type { AppLoadContext } from "../server-runtime/data";
-import type { MiddlewareEnabled } from "./future";
+} from "../router/utils.js";
+import type { AppLoadContext } from "../server-runtime/data.js";
+import type { MiddlewareEnabled } from "./future.js";
 
-import type { GetLoaderData, ServerDataFrom } from "./route-data";
-import type { RouteModule } from "./route-module";
-import type { Pretty } from "./utils";
+import type { GetLoaderData, ServerDataFrom } from "./route-data.js";
+import type { RouteModule } from "./route-module.js";
+import type { Pretty } from "./utils.js";
 
 type MaybePromise<T> = T | Promise<T>;
 

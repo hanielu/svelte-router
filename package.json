@@ -40,7 +40,7 @@
     "svelte": "^5.0.0"
   },
   "devDependencies": {
-    "@hvniel/vite-plugin-svelte-inline-component": "^0.0.16",
+    "@hvniel/vite-plugin-svelte-inline-component": "^0.0.17",
     "@iconify/json": "^2.2.351",
     "@sveltejs/adapter-static": "^3.0.9",
     "@sveltejs/kit": "^2.31.1",

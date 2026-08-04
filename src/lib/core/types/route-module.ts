@@ -1,4 +1,4 @@
-import type { Func } from "./utils";
+import type { Func } from "./utils.js";
 
 export type RouteModule = {
   meta?: Func;

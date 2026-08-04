@@ -9,17 +9,37 @@ import {
   type NavigateOptions,
   type RouteObject,
 } from "./context.js";
-import { invariant, parsePath, warning, type Path, type To } from "./router/history.js";
 import {
+  Action as NavigationType,
+  invariant,
+  parsePath,
+  warning,
+  type Path,
+  type To,
+} from "./router/history.js";
+import {
+  convertRouteMatchToUiMatch,
+  decodePath,
   matchRoutes,
+  matchPath,
   joinPaths,
   getResolveToMatches,
   resolveTo,
+  stripBasename,
+  type ParamParseKey,
   type Params,
+  type PathMatch,
+  type PathPattern,
+  type UIMatch,
 } from "./router/utils.js";
 import { box } from "$lib/utils/index.js";
 import type { SerializeFrom } from "./types/route-data.js";
-import type { RelativeRoutingType } from "./router/router.js";
+import {
+  IDLE_BLOCKER,
+  type Blocker,
+  type BlockerFunction,
+  type RelativeRoutingType,
+} from "./router/router.js";
 
 /**
   Resolves a URL against the current location.
@@ -240,6 +260,56 @@ export function useLocation() {
 }
 
 /**
+ * Returns the action that produced the current location: POP, PUSH, or REPLACE.
+ *
+ * Wrap the call in `$derived(...)` when the value must stay live across
+ * navigations in a component that remains mounted.
+ *
+ * @category Hooks
+ */
+export function useNavigationType(): NavigationType {
+  return LocationContext.current.navigationType;
+}
+
+/**
+ * Returns a match when `pattern` matches the current decoded pathname.
+ *
+ * @category Hooks
+ */
+export function useMatch<
+  ParamKey extends ParamParseKey<Path>,
+  Path extends string,
+>(pattern: PathPattern<Path> | Path): PathMatch<ParamKey> | null {
+  invariant(
+    useInRouterContext(),
+    `useMatch() may be used only in the context of a <Router> component.`
+  );
+
+  let { pathname } = useLocation();
+  return matchPath<ParamKey, Path>(pattern, decodePath(pathname));
+}
+
+/**
+ * Returns the current data-router navigation, defaulting to the idle state.
+ *
+ * @category Hooks
+ */
+export function useNavigation() {
+  let state = useDataRouterState(DataRouterStateHook.UseNavigation);
+  return state.current!.navigation;
+}
+
+/**
+ * Returns the active data-route matches with their loader data and handles.
+ *
+ * @category Hooks
+ */
+export function useMatches(): UIMatch[] {
+  let state = useDataRouterState(DataRouterStateHook.UseMatches).current!;
+  return state.matches.map(match => convertRouteMatchToUiMatch(match, state.loaderData));
+}
+
+/**
   Returns the data from the closest route {@link LoaderFunction | loader} or {@link ClientLoaderFunction | client loader}.
 
   ```svelte
@@ -260,6 +330,31 @@ export function useLoaderData<T = any>(): SerializeFrom<T> {
   let state = useDataRouterState(DataRouterStateHook.UseLoaderData);
   let routeId = useCurrentRouteId(DataRouterStateHook.UseLoaderData);
   return state.current?.loaderData[routeId] as SerializeFrom<T>;
+}
+
+/**
+ * Returns loader data for a route with the supplied ID.
+ *
+ * @category Hooks
+ */
+export function useRouteLoaderData<T = any>(
+  routeId: string
+): SerializeFrom<T> | undefined {
+  let state = useDataRouterState(DataRouterStateHook.UseRouteLoaderData);
+  return state.current?.loaderData[routeId] as SerializeFrom<T> | undefined;
+}
+
+/**
+ * Returns data from the nearest route's most recent action submission.
+ *
+ * @category Hooks
+ */
+export function useActionData<T = any>(): SerializeFrom<T> | undefined {
+  let state = useDataRouterState(DataRouterStateHook.UseActionData);
+  let routeId = useCurrentRouteId(DataRouterStateHook.UseActionData);
+  return (state.current?.actionData?.[routeId] ?? undefined) as
+    | SerializeFrom<T>
+    | undefined;
 }
 
 /**
@@ -302,12 +397,14 @@ function useNavigateUnstable(): NavigateFunction {
     `useNavigate() may be used only in the context of a <Router> component.`
   );
 
-  let dataRouterContext = DataRouterContext.current;
-  let { basename, navigator } = NavigationContext.current;
-  let { matches } = RouteContext.current;
-  let { pathname: locationPathname } = useLocation();
-
-  let routePathnamesJson = JSON.stringify(getResolveToMatches(matches));
+  // Capture the context boxes during component setup, then read their current
+  // values when navigation occurs. A Svelte component does not rerun its setup
+  // script after navigation, so capturing the values here would make relative
+  // navigation resolve against the location that existed at mount time.
+  let dataRouterContext = DataRouterContext.get();
+  let navigationContext = NavigationContext.get();
+  let routeContext = RouteContext.get();
+  let locationContext = LocationContext.get();
 
   // this being a $state variable allows child components to access the navigate function
   // so if useNavigate() is called in a parent component,
@@ -320,6 +417,9 @@ function useNavigateUnstable(): NavigateFunction {
   // TBD: figure out if this is a problem
   $effect(() => {
     activeRef = true;
+    return () => {
+      activeRef = false;
+    };
   });
 
   let navigate: NavigateFunction = (to: To | number, options: NavigateOptions = {}) => {
@@ -330,9 +430,16 @@ function useNavigateUnstable(): NavigateFunction {
     if (!activeRef) return;
 
     if (typeof to === "number") {
+      let { navigator } = navigationContext.current;
       navigator.go(to);
       return;
     }
+
+    let currentDataRouterContext = dataRouterContext.current;
+    let { basename, navigator } = navigationContext.current;
+    let { matches } = routeContext.current;
+    let locationPathname = locationContext.current.location.pathname;
+    let routePathnamesJson = JSON.stringify(getResolveToMatches(matches));
 
     let path = resolveTo(
       to,
@@ -347,7 +454,7 @@ function useNavigateUnstable(): NavigateFunction {
     // If this is a root navigation, then we navigate to the raw basename
     // which allows the basename to have full control over the presence of a
     // trailing slash on root links
-    if (dataRouterContext == null && basename !== "/") {
+    if (currentDataRouterContext == null && basename !== "/") {
       path.pathname = path.pathname === "/" ? basename : joinPaths([basename, path.pathname]);
     }
 
@@ -378,6 +485,9 @@ function useNavigateStable(): NavigateFunction {
   // TBD: figure out if this is a problem
   $effect(() => {
     activeRef = true;
+    return () => {
+      activeRef = false;
+    };
   });
 
   let navigate: NavigateFunction = async (to: To | number, options: NavigateOptions = {}) => {
@@ -395,6 +505,69 @@ function useNavigateStable(): NavigateFunction {
   };
 
   return navigate;
+}
+
+let blockerId = 0;
+
+/**
+ * Blocks in-app data-router navigations while `shouldBlock` returns true.
+ *
+ * A function is the most useful Svelte form because it can read current rune
+ * state when the router asks whether a navigation should be blocked:
+ *
+ * ```ts
+ * const blocker = useBlocker(() => form.dirty);
+ * ```
+ *
+ * The returned proxy has stable identity while its properties read the live
+ * blocker held by the router.
+ *
+ * @category Hooks
+ */
+export function useBlocker(shouldBlock: boolean | BlockerFunction): Blocker {
+  let dataRouterContext = useDataRouterContext(DataRouterHook.UseBlocker);
+  let state = useDataRouterState(DataRouterStateHook.UseBlocker);
+  let blockerKey = String(++blockerId);
+
+  let blockerFunction: BlockerFunction = args => {
+    if (typeof shouldBlock !== "function") {
+      return shouldBlock;
+    }
+
+    let basename = dataRouterContext.current!.basename;
+    if (basename === "/") {
+      return shouldBlock(args);
+    }
+
+    let { currentLocation, nextLocation, historyAction } = args;
+    return shouldBlock({
+      currentLocation: {
+        ...currentLocation,
+        pathname:
+          stripBasename(currentLocation.pathname, basename) || currentLocation.pathname,
+      },
+      nextLocation: {
+        ...nextLocation,
+        pathname: stripBasename(nextLocation.pathname, basename) || nextLocation.pathname,
+      },
+      historyAction,
+    });
+  };
+
+  $effect(() => {
+    let router = dataRouterContext.current!.router;
+    router.getBlocker(blockerKey, blockerFunction);
+
+    return () => router.deleteBlocker(blockerKey);
+  });
+
+  return new Proxy(IDLE_BLOCKER, {
+    get(_target, property) {
+      let blocker = state.current?.blockers.get(blockerKey) ?? IDLE_BLOCKER;
+      let value = Reflect.get(blocker, property, blocker);
+      return typeof value === "function" ? value.bind(blocker) : value;
+    },
+  });
 }
 
 /**

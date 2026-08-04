@@ -1,6 +1,8 @@
 import {
   ErrorResponseImpl,
   joinPaths,
+  matchPath,
+  stripBasename,
   type DataStrategyFunction,
   type FormEncType,
   type HTMLFormMethod,
@@ -10,6 +12,7 @@ import {
   DataRouterStateContext,
   NavigationContext,
   RouteContext,
+  ViewTransitionContext,
   type NavigateOptions,
   type PatchRoutesOnNavigationFunction,
   type RouteObject,
@@ -504,14 +507,44 @@ export function useLinkClickHandler<E extends Element = HTMLAnchorElement>(
   };
 }
 
+/**
+ * Returns whether a data-router view transition is moving to or from `to`.
+ *
+ * Wrap the call in `$derived(...)` when it must remain live.
+ *
+ * @category Hooks
+ */
+export function useViewTransitionState(
+  to: To,
+  opts: { relative?: RelativeRoutingType } = {}
+): boolean {
+  let viewTransitionContext = ViewTransitionContext.get();
+  let { basename } = useDataRouterContext(DataRouterHook.useViewTransitionState);
+  let path = useResolvedPath(to, { relative: opts.relative });
+  let transition = viewTransitionContext.current;
+
+  if (!transition.isTransitioning) return false;
+
+  let currentPath =
+    stripBasename(transition.currentLocation.pathname, basename) ||
+    transition.currentLocation.pathname;
+  let nextPath =
+    stripBasename(transition.nextLocation.pathname, basename) ||
+    transition.nextLocation.pathname;
+
+  return Boolean(matchPath(path.pathname, nextPath) || matchPath(path.pathname, currentPath));
+}
+
 export { default as MemoryRouter } from "./memory-router.svelte";
 export { default as BrowserRouter } from "./browser-router.svelte";
 export { default as HashRouter } from "./hash-router.svelte";
 export { default as Form } from "./form.svelte";
 export { default as Link } from "./link.svelte";
+export { default as NavLink } from "./nav-link.svelte";
 
 export type { MemoryRouterProps } from "./memory-router.svelte";
 export type { BrowserRouterProps } from "./browser-router.svelte";
 export type { HashRouterProps } from "./hash-router.svelte";
 export type { FormProps } from "./form.svelte";
 export type { LinkProps } from "./link.svelte";
+export type { NavLinkProps, NavLinkRenderProps } from "./nav-link.svelte";

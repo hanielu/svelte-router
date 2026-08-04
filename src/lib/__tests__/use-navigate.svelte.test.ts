@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
 import { render } from "vitest-browser-svelte";
-import { createClickGetter, html, snippet } from "test-utils";
+import { createClickGetter, html, scope, snippet } from "test-utils";
 import type { Snippet } from "svelte";
 
 // svelte:defs
@@ -43,10 +43,7 @@ describe("useNavigate", () => {
       </div> `;
 
     let screen = render(
-      html`
-			<script>
-				let {Home} = $props();
-			</script>
+      scope(Home).html`
 			<MemoryRouter initialEntries={["/home"]}>
 				<Routes>
 					<Route path="home" element={Home} />
@@ -57,8 +54,7 @@ describe("useNavigate", () => {
 					</Route>
 				</Routes>
 			</MemoryRouter>
-      `,
-      { Home }
+      `
     );
 
     let button = screen.getByRole("button");
@@ -77,17 +73,13 @@ describe("useNavigate", () => {
       </div> `;
 
     let screen = render(
-      html`
-			<script>
-				let {Home} = $props();
-			</script>
+      scope(Home).html`
 			<MemoryRouter initialEntries={["/home"]}>
 				<Routes>
 					<Route path="home" element={Home} />
 				</Routes>
 			</MemoryRouter>
-      `,
-      { Home }
+      `
     );
 
     await expect.element(screen.getByText("/home")).toBeVisible();
@@ -107,17 +99,13 @@ describe("useNavigate", () => {
       </div> `;
 
     let screen = render(
-      html`
-			<script>
-				let {Home} = $props();
-			</script>
+      scope(Home).html`
 			<MemoryRouter basename="/basename" initialEntries={["/basename/home"]}>
 				<Routes>
 					<Route path="home" element={Home} />
 				</Routes>
 			</MemoryRouter>
-        `,
-      { Home }
+        `
     );
 
     await expect.element(screen.getByText("/home")).toBeVisible();
@@ -138,17 +126,13 @@ describe("useNavigate", () => {
 		`;
 
     let screen = render(
-      html`
-			<script>
-				let {Home} = $props();
-			</script>
+      scope(Home).html`
 			<MemoryRouter initialEntries={["/home?key=value"]}>
           <Routes>
             <Route path="home" element={Home} />
           </Routes>
         </MemoryRouter>
-      `,
-      { Home }
+      `
     );
 
     await expect.element(screen.getByText("/home?key=value")).toBeVisible();
@@ -183,17 +167,13 @@ describe("useNavigate", () => {
     	`;
 
     let screen = render(
-      html`
-			<script>
-				let {Home} = $props();
-			</script>
+      scope(Home).html`
         <MemoryRouter initialEntries={["/home"]}>
           <Routes>
             <Route path="home" element={Home} />
           </Routes>
         </MemoryRouter>
-      `,
-      { Home }
+      `
     );
 
     const getClick = (text: string) => createClickGetter(screen.getByText(text));
@@ -219,21 +199,6 @@ describe("useNavigate", () => {
       {
         path: "/*",
         Component: snippet.c(a => {
-          const Component = html`<script>
-					let {Home, Page} = $props();
-					let navigate = useNavigate();
-					let location = $derived(useLocation());
-					</script>
-					<button onclick={() => navigate(location.pathname === "/" ? "/page" : "/")}>
-						Navigate from RouterProvider
-					</button>
-					<Routes>
-						<Route path="/" element={Home} />
-						<Route path="/page" element={Page} />
-					</Routes>
-
-				`;
-
           const Home = html`<script>
 					let navigate = useNavigate();
 					</script>
@@ -250,7 +215,21 @@ describe("useNavigate", () => {
             Navigate /home from Routes
           </button>`;
 
-          Component(a, { Home, Page });
+          const Component = scope(Home, Page).html`<script>
+					let navigate = useNavigate();
+					let location = $derived(useLocation());
+					</script>
+					<button onclick={() => navigate(location.pathname === "/" ? "/page" : "/")}>
+						Navigate from RouterProvider
+					</button>
+					<Routes>
+						<Route path="/" element={Home} />
+						<Route path="/page" element={Page} />
+					</Routes>
+
+				`;
+
+          Component(a, {});
         }),
       },
     ]);
@@ -310,9 +289,7 @@ describe("useNavigate", () => {
           <h1>Home</h1>`;
 
         const screen = render(
-          html`<script>
-              let { Home } = $props();
-            </script>
+          scope(Home).html`
             <MemoryRouter>
               <Routes>
                 <Route index element="{Home}" />
@@ -322,8 +299,7 @@ describe("useNavigate", () => {
                   {/snippet}
                 </Route>
               </Routes>
-            </MemoryRouter>`,
-          { Home }
+            </MemoryRouter>`
         );
 
         expect(screen.getByText("Home")).toBeVisible();
@@ -342,9 +318,7 @@ describe("useNavigate", () => {
           <h1>Home</h1> `;
 
         const screen = render(
-          html`<script>
-              let { Home } = $props();
-            </script>
+          scope(Home).html`
             <MemoryRouter>
               <Routes>
                 <Route index element="{Home}" />
@@ -354,8 +328,7 @@ describe("useNavigate", () => {
                   {/snippet}
                 </Route>
               </Routes>
-            </MemoryRouter>`,
-          { Home }
+            </MemoryRouter>`
         );
 
         expect(screen.getByText("About")).toBeVisible();
@@ -374,13 +347,6 @@ describe("useNavigate", () => {
       // component has mounted and its effects have run. Trying to navigate from a child
       // component will silently fail because activeRef is still false.
       it("allows navigation in child $effects", async () => {
-        const Parent = html`<script>
-            let { Child } = $props();
-            let navigate = useNavigate();
-            const onChildRendered = () => navigate("/about");
-          </script>
-          <Child {onChildRendered} />`;
-
         const Child = html`<script>
           let { onChildRendered } = $props();
           let navigate = useNavigate();
@@ -395,22 +361,24 @@ describe("useNavigate", () => {
           });
         </script>`;
 
+        const Parent = scope(Child).html`<script>
+            let navigate = useNavigate();
+            const onChildRendered = () => navigate("/about");
+          </script>
+          <Child {onChildRendered} />`;
+
         const screen = render(
-          html`<script>
-              let { Parent } = $props();
-            </script>
+          scope(Parent).html`
             <MemoryRouter initialEntries={["/home"]}>
 							<Routes>
-								<Route path="home" element="{Parent}" />
+				<Route path="home" element="{Parent}" />
                 <Route path="about">
 									{#snippet element()}
-										{console.log("c reh")}
 										<h1>About</h1>
                   {/snippet}
                 </Route>
               </Routes>
-            </MemoryRouter> `,
-          { Parent: snippet.c(a => Parent(a, { Child })) }
+            </MemoryRouter> `
         );
 
         // we wait for the effect to run, which is when the parent component has mounted
@@ -483,13 +451,6 @@ describe("useNavigate", () => {
           {
             index: true,
             Component: snippet.c(a => {
-              const Parent = html`<script>
-                  let { Child } = $props();
-                  let navigate = useNavigate();
-                  let onChildRendered = () => navigate("/about");
-                </script>
-                <Child {onChildRendered} />`;
-
               const Child = html`<script>
                 let { onChildRendered } = $props();
                 let navigate = useNavigate();
@@ -498,7 +459,14 @@ describe("useNavigate", () => {
                   onChildRendered();
                 });
               </script>`;
-              Parent(a, { Child });
+
+              const Parent = scope(Child).html`<script>
+                  let navigate = useNavigate();
+                  let onChildRendered = () => navigate("/about");
+                </script>
+                <Child {onChildRendered} />`;
+
+              Parent(a, {});
             }),
           },
           {
@@ -536,17 +504,14 @@ describe("useNavigate", () => {
         const ShowLocationState = html`<p>location.state:{JSON.stringify(useLocation().state)}</p>`;
 
         const screen = render(
-          html`<script>
-						let { Home, ShowLocationState } = $props();
-					</script>
+          scope(Home, ShowLocationState).html`
 					<MemoryRouter initialEntries={["/home"]}>
 						<Routes>
 							<Route path="home" element="{Home}" />
 							<Route path="about" element="{ShowLocationState}" />
 						</Routes>
 					</MemoryRouter>
-				`,
-          { Home, ShowLocationState }
+				`
         );
 
         await screen.getByText("click me").click();
@@ -557,7 +522,29 @@ describe("useNavigate", () => {
 
   describe("when relative navigation is handled via React Context", () => {
     describe("with an absolute href", () => {
-      it("navigates to the correct URL", async () => {});
+      it("navigates to the correct URL", async () => {
+        const Home = html`<script>
+            const navigate = useNavigate();
+          </script>
+
+          <button onclick={() => navigate("/about")}>Go to about</button>`;
+
+        const screen = render(
+          scope(Home).html`
+            <MemoryRouter initialEntries={["/home"]}>
+              <Routes>
+                <Route path="home" element={Home} />
+                <Route path="about">
+                  {#snippet element()}<h1>About</h1>{/snippet}
+                </Route>
+              </Routes>
+            </MemoryRouter>
+          `
+        );
+
+        await screen.getByRole("button", { name: "Go to about" }).click();
+        await expect.element(screen.getByRole("heading", { name: "About" })).toBeVisible();
+      });
     });
   });
 });
