@@ -1,4 +1,3 @@
-// import type { Expand, Getter, MaybeBoxOrGetter } from "../types.js";
 import { isFunction, isObject } from "./is.js";
 import type { Getter } from "./types.js";
 
@@ -16,6 +15,59 @@ export type WritableBox<T> = ReadableBox<T> & {
   readonly [isWritableSymbol]: true;
   current: T;
 };
+
+/** Owned mutable state; accessors are shared while each instance owns its signal. */
+class StateBox<T> implements WritableBox<T> {
+  readonly [BoxSymbol] = true;
+  readonly [isWritableSymbol] = true;
+  #current: T;
+
+  constructor(value: T) {
+    this.#current = $state(value);
+  }
+
+  get current(): T {
+    return this.#current;
+  }
+
+  set current(value: T) {
+    this.#current = value;
+  }
+}
+
+/** One cached projection implementation for context boxes and public router values. */
+class DerivedBox<T> implements ReadableBox<T> {
+  readonly [BoxSymbol] = true;
+  #current: T;
+
+  constructor(read: () => T) {
+    this.#current = $derived.by(read);
+  }
+
+  get current(): T {
+    return this.#current;
+  }
+}
+
+/** Reuse the readonly projection's cache and delegate writes to its owner. */
+class WritableDerivedBox<T> extends DerivedBox<T> implements WritableBox<T> {
+  readonly [isWritableSymbol] = true;
+  readonly #write: (value: T) => void;
+
+  constructor(read: () => T, write: (value: T) => void) {
+    super(read);
+    this.#write = write;
+  }
+
+  // A setter-only override would hide the inherited getter.
+  override get current(): T {
+    return super.current;
+  }
+
+  override set current(value: T) {
+    this.#write(value);
+  }
+}
 
 /**
  * @returns Whether the value is a Box
@@ -53,23 +105,14 @@ export function box<T>(): WritableBox<T | undefined>;
  * @see {@link https://runed.dev/docs/functions/box}
  */
 export function box<T>(initialValue: T): WritableBox<T>;
-export function box(initialValue?: unknown) {
-  let current = $state(initialValue);
-
-  return {
-    [BoxSymbol]: true,
-    [isWritableSymbol]: true,
-    get current() {
-      return current as unknown;
-    },
-    set current(v: unknown) {
-      current = v;
-    },
-  };
+export function box(initialValue?: unknown): WritableBox<unknown> {
+  return new StateBox(initialValue);
 }
 
 /**
- * Creates a readonly box
+ * Creates a readonly box with a cached projection. The getter must be pure and
+ * read its reactive dependencies synchronously; reads do not create effects or
+ * copy the result into writable state.
  *
  * @param getter Function to get the value of the box
  * @returns A box with a `current` property whose value is the result of the getter.
@@ -89,28 +132,8 @@ function boxWith<T>(getter: () => T): ReadableBox<T>;
  * @see {@link https://runed.dev/docs/functions/box}
  */
 function boxWith<T>(getter: () => T, setter: (v: T) => void): WritableBox<T>;
-function boxWith<T>(getter: () => T, setter?: (v: T) => void) {
-  const derived = $derived.by(getter);
-
-  if (setter) {
-    return {
-      [BoxSymbol]: true,
-      [isWritableSymbol]: true,
-      get current() {
-        return derived;
-      },
-      set current(v: T) {
-        setter(v);
-      },
-    };
-  }
-
-  return {
-    [BoxSymbol]: true,
-    get current() {
-      return getter();
-    },
-  };
+function boxWith<T>(getter: () => T, setter?: (v: T) => void): ReadableBox<T> | WritableBox<T> {
+  return setter ? new WritableDerivedBox(getter, setter) : new DerivedBox(getter);
 }
 
 /**
@@ -211,13 +234,7 @@ function boxFlatten<R extends Record<string, unknown>>(boxes: R): BoxFlatten<R> 
  */
 function toReadonlyBox<T>(b: ReadableBox<T>): ReadableBox<T> {
   if (!box.isWritableBox(b)) return b;
-
-  return {
-    [BoxSymbol]: true,
-    get current() {
-      return b.current;
-    },
-  };
+  return box.with(() => b.current);
 }
 
 box.from = boxFrom;

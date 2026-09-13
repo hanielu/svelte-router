@@ -111,7 +111,7 @@ export class Context<TContext> {
   }
 
   /**
-   * For ReadableBox contexts: sets a value using a getter function.
+   * For ReadableBox contexts: sets a cached projection using a pure getter.
    * Equivalent to this.set(box.with(getter)) for ReadableBox<T> contexts.
    *
    * Must be called during component initialisation.
