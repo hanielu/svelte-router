@@ -1,7 +1,7 @@
 # Client data, errors, and scroll
 
-These are implemented **unreleased** APIs on the Svelte 5.57 branch. They are not
-part of the published `0.0.6` contract. See [the upstream audit](test-parity.md)
+These APIs are included in `0.1.0` and require Svelte 5.57. They are not
+part of the `0.0.6` contract. See [the upstream audit](test-parity.md)
 for exact evidence and [Ridu adoption](ridu-adoption.md) for the consumer boundary.
 
 ## Fetchers

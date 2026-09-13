@@ -1,6 +1,6 @@
 {
   "name": "@hvniel/svelte-router",
-  "version": "0.0.6",
+  "version": "0.1.0",
   "license": "MIT",
   "author": "Haniel Ubogu <https://github.com/HanielU>",
   "repository": {
@@ -21,6 +21,7 @@
     "test": "npm run test:unit -- --run"
   },
   "files": [
+    "NOTICE.txt",
     "dist",
     "!dist/__tests__/**",
     "!dist/**/*.test.*",

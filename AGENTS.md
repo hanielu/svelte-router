@@ -39,7 +39,7 @@ Read the narrowest relevant guide before changing a subsystem:
 - [Client data, errors and scroll](docs/client-data.md): fetcher/scroll contracts,
   readiness, persistence, boundaries, and cached lazy-import failures.
 - [Ridu adoption assessment](docs/ridu-adoption.md): consumer integration and
-  unreleased dependency boundary; do not infer a production migration from tests.
+  versioned dependency boundary; do not infer a production migration from tests.
 - [README](README.md): supported consumer entry points and examples.
 
 This guide and the subsystem guides define development rules. The parity plan
@@ -57,7 +57,7 @@ External documentation must be checked against the version actually installed.
 
 The foundation audit on 2026-09-13 found:
 
-- Package version `0.0.6`; development compiler and minimum Svelte peer `5.57.0`.
+- Package version `0.1.0`; development compiler and minimum Svelte peer `5.57.0`.
 - Runes enabled in `svelte.config.js`; strict TypeScript with NodeNext resolution.
 - Vite `8.3.0`, Vitest `4.1.11`, SvelteKit `2.70.3`, and the Svelte Vite plugin
   `7.3.0`. Chromium tests use `@vitest/browser-playwright` and async
@@ -111,10 +111,10 @@ older Svelte release. Recheck the compiler and surrounding tooling when upgradin
   search, loader data, and navigation state without mounting a new component.
 - Classify every API result as a snapshot, live value handle, or controller with
   commands. Document its identity, read behaviour, mutability, and lifetime.
-- This branch's value hooks return stable readonly `RouterValue<T>` handles.
+- Value hooks in `0.1.0` return stable readonly `RouterValue<T>` handles.
   Initialize once with `const location = useLocation()` and read
   `location.current`. Do not wrap hook factories in `$derived` or teach the old
-  snapshot-returning API. This is a breaking, unreleased change from `0.0.6`.
+  snapshot-returning API. This is a breaking change from `0.0.6`.
 - Changing path/pattern/route-ID inputs use getters, including the options object:
   `useResolvedPath(() => to, () => ({ relative }))`. A live result cannot repair
   a captured input. Do not retain parallel snapshot APIs solely for React syntax.

@@ -69,7 +69,7 @@ consumer are insufficient reasons for a new public concept.
 
 A return-shape migration includes internal hook call sites, components using those
 hooks, test fixtures, JSDoc, and consumer docs. The `.current` migration is now
-implemented on this branch but unreleased. Do not restore the old snapshot shape
+the contract in `0.1.0`. Do not restore the old snapshot shape
 in an example or retain two APIs merely because the first resembles React.
 
 Sibling applications can supply acceptance cases. Do not edit them, use absolute

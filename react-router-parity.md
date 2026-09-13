@@ -197,7 +197,7 @@ React reruns a component function. Svelte runs component setup once. A direct po
 that captures `location`, `matches`, or router state in a closure can remain forever
 stuck at its mount-time value.
 
-For the implemented, unreleased value-hook contract, document and test this pattern:
+For the `0.1.0` value-hook contract, document and test this pattern:
 
 ```svelte
 <script lang="ts">
@@ -215,7 +215,7 @@ read `.current` inside the returned function. Do not capture a destructured loca
 or match array at hook creation.
 
 Value hooks now use stable readonly `.current` handles for replaceable values.
-This is a breaking branch change from the published `0.0.6` API, not a release.
+This is a breaking change in `0.1.0` from the `0.0.6` API.
 The [reactivity guide](docs/svelte-reactivity.md) defines identity, context capture,
 cached projections, reactive inputs, and the distinction between value handles
 and command controllers. Migrate the implementation, types, tests, JSDoc, and

@@ -1,6 +1,6 @@
 # Ridu adoption assessment
 
-Scope: the unreleased Svelte 5.57/router branch, compared with Ridu checkout
+Scope: the router `0.1.0` contract (Svelte 5.57), compared with Ridu checkout
 `c8c0089c` on 2026-09-13. This is an adoption assessment, not a production Ridu
 migration or a claim that the new APIs exist in published router `0.0.6`.
 
@@ -65,12 +65,12 @@ as the first production data-route experiment if that architecture is desired.
 
 ## Release and integration boundary
 
-Ridu currently declares router `^0.0.6` and Svelte `^5.56.8`. This branch's live
-handles are breaking and require Svelte 5.57. Changing Ridu call sites now while
-leaving those dependencies intact would make its checkout inconsistent. Publishing
-or selecting an immutable release artifact is a separate explicit decision.
+At the assessed checkout, Ridu declares router `^0.0.6` and Svelte `^5.56.8`.
+The `0.1.0` live handles are breaking and require Svelte 5.57. Changing Ridu call
+sites while leaving those dependencies intact would make its checkout inconsistent.
+Ridu adoption remains a separate explicit decision from router publication.
 
-After that artifact exists, make one coherent Ridu integration change:
+After selecting the published artifact, make one coherent Ridu integration change:
 
 1. Update the router and Svelte requirements/lock together; migrate reader calls
    from `$derived(useLocation())` to setup-once handles with `.current`. Keep

@@ -1,7 +1,7 @@
 # Svelte reactivity and public API design
 
 This guide defines how to design and consume reactive router APIs. It describes
-the implemented, unreleased `.current` contract, which breaks the snapshot-returning
+the `0.1.0` `.current` contract, which breaks the snapshot-returning
 API of `0.0.6`. See
 [AGENTS.md](../AGENTS.md) for repository-wide rules and
 [the development guide](frontend-development.md) for probes and evidence.

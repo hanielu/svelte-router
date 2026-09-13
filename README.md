@@ -6,8 +6,9 @@ A powerful Svelte 5 port of React Router - the modern, lightweight, performant, 
 
 ## Quick start
 
-This branch targets Svelte `5.57.0` or newer within Svelte 5. The package is still
-`0.0.6`; unreleased branch changes are not implied to be on npm yet.
+Version `0.1.0` requires Svelte `5.57.0` or newer within Svelte 5. Upgrading from
+`0.0.6` requires migrating value hooks to readonly `.current` handles; see the
+[migration contract](#svelte-5-reactivity-integration) below.
 
 Install it:
 
@@ -126,7 +127,7 @@ application owns its data fetching. See [router architecture](docs/architecture.
 
 See [client data, error recovery, and scroll](docs/client-data.md) for the new
 fetcher and scroll APIs, working examples, and their limits. These additions and
-the `.current` change are on this branch, not published in `0.0.6`.
+the `.current` change are included in `0.1.0`, not `0.0.6`.
 
 ## Examples
 
@@ -270,7 +271,7 @@ Initialize them once; reads stay live without remounting the component:
 <p>{location.current.pathname}: {params.current.id ?? 'no user selected'}</p>
 ```
 
-This is an implemented, **unreleased breaking change from 0.0.6**. Replace
+Version `0.1.0` introduces a **breaking change from 0.0.6**. Replace
 `$derived(useLocation())` with `useLocation()` and read `location.current`.
 Use getters for changing inputs: `useHref(() => to, () => ({ relative }))`.
 `$derived` remains useful for calculations from the current value. See the
