@@ -17,8 +17,8 @@ describe("<Router>", () => {
     consoleWarn.mockRestore(); // restore native impl
   });
 
-  it("renders null and issues a warning when the URL does not match the basename", () => {
-    const screen = render(
+  it("renders null and issues a warning when the URL does not match the basename", async () => {
+    const screen = await render(
       html`
       <MemoryRouter basename="/app" initialEntries={["/home"]}>
         <Routes>
@@ -38,8 +38,8 @@ describe("<Router>", () => {
     );
   });
 
-  it("renders the first route that matches the URL", () => {
-    const screen = render(
+  it("renders the first route that matches the URL", async () => {
+    const screen = await render(
       html`
       <MemoryRouter basename="/home" initialEntries={["/home"]}>
         <Routes>
@@ -59,8 +59,8 @@ describe("<Router>", () => {
     `);
   });
 
-  it("does not render a 2nd route that also matches the URL", () => {
-    const screen = render(
+  it("does not render a 2nd route that also matches the URL", async () => {
+    const screen = await render(
       html`
       <MemoryRouter basename="/app" initialEntries={["/app/home"]}>
         <Routes>
@@ -85,8 +85,8 @@ describe("<Router>", () => {
     `);
   });
 
-  it("matches regardless of basename casing", () => {
-    const screen = render(
+  it("matches regardless of basename casing", async () => {
+    const screen = await render(
       html`
       <MemoryRouter basename="/HoME" initialEntries={["/home"]}>
         <Routes>
@@ -106,8 +106,8 @@ describe("<Router>", () => {
     `);
   });
 
-  it("matches regardless of URL casing", () => {
-    const screen = render(
+  it("matches regardless of URL casing", async () => {
+    const screen = await render(
       html`
       <MemoryRouter basename="/home" initialEntries={["/hOmE"]}>
         <Routes>

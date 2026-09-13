@@ -19,7 +19,7 @@ import {
 
 describe("<NavLink>", () => {
   it("marks active links and supplies aria-current", async () => {
-    const screen = render(html`
+    const screen = await render(html`
       <MemoryRouter initialEntries={["/tasks/123"]}>
         <NavLink to="/tasks">Tasks</NavLink>
         <NavLink to="/tasks" end>Exact tasks</NavLink>
@@ -40,7 +40,7 @@ describe("<NavLink>", () => {
   });
 
   it("supports case-sensitive matching", async () => {
-    const screen = render(html`
+    const screen = await render(html`
       <MemoryRouter initialEntries={["/SpOnGe-bOB"]}>
         <NavLink to="/sponge-bob">Insensitive</NavLink>
         <NavLink to="/sponge-bob" caseSensitive>Sensitive</NavLink>
@@ -56,7 +56,7 @@ describe("<NavLink>", () => {
   });
 
   it("passes active state to Svelte children snippets", async () => {
-    const screen = render(html`
+    const screen = await render(html`
       <MemoryRouter initialEntries={["/tasks"]}>
         <NavLink to="/tasks" class={({ isActive }) => (isActive ? "selected" : "idle")}>
           {#snippet children({ isActive, isPending, isTransitioning })}
@@ -95,7 +95,7 @@ describe("<NavLink>", () => {
       },
     ]);
 
-    const screen = render(
+    const screen = await render(
       html`<script>
           let { router } = $props();
         </script>
@@ -112,7 +112,7 @@ describe("<NavLink>", () => {
   });
 
   it("respects a router basename", async () => {
-    const screen = render(html`
+    const screen = await render(html`
       <MemoryRouter basename="/admin" initialEntries={["/admin/collections/posts"]}>
         <NavLink to="/collections/posts">Posts</NavLink>
       </MemoryRouter>
@@ -153,7 +153,7 @@ describe("upstream NavLink active matching", () => {
   ];
 
   it.each(cases)("$name", async scenario => {
-    const screen = render(html`<script>let { scenario } = $props();</script>
+    const screen = await render(html`<script>let { scenario } = $props();</script>
       {#snippet links()}
         <NavLink to={scenario.to} end={scenario.end} caseSensitive={scenario.caseSensitive} relative={scenario.relative}>Link</NavLink>
         <Outlet />
@@ -177,7 +177,7 @@ describe("upstream NavLink active matching", () => {
   });
 
   it.each([false, true])("class/style callbacks and children snippet, active=%s", async active => {
-    const screen = render(html`<script>let { active } = $props();</script>
+    const screen = await render(html`<script>let { active } = $props();</script>
       <MemoryRouter initialEntries={["/home"]}>
         <Routes><Route path="home">{#snippet element()}
           <NavLink to={active ? "." : "somewhere-else"}
@@ -201,7 +201,7 @@ describe("upstream NavLink active matching", () => {
   it("encodes relative and absolute browser URLs for active matching", async () => {
     const isolated = await createTestWindow("/users/matt brophy");
     try {
-      const screen = render(html`<script>let { testWindow } = $props();</script>
+      const screen = await render(html`<script>let { testWindow } = $props();</script>
         <BrowserRouter window={testWindow}>
           <Routes><Route path="users/:name">{#snippet element()}
             <NavLink to=".">Relative</NavLink>
@@ -252,7 +252,7 @@ describe("upstream NavLink pending state", () => {
     <RouterProvider {router} />`;
     let router: ReturnType<typeof createBrowserRouter> | undefined;
     try {
-      const screen = render(App, { testWindow: isolated.window, basename, bar, baz,
+      const screen = await render(App, { testWindow: isolated.window, basename, bar, baz,
         barData: barData.promise, bazData: bazData.promise, variant,
         capture: (value: ReturnType<typeof createBrowserRouter>) => { router = value; },
       });

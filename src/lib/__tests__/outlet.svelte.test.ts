@@ -13,14 +13,14 @@ describe.each(["declarative", "data"] as const)("upstream Outlet/context renderi
     <h1>Profile</h1><pre data-testid="context">{context.current === undefined ? "undefined" : JSON.stringify(context.current)}</pre>`;
   const Layout = html`<Outlet context={["Mary", "Jane", "Michael"]} />`;
 
-  it("renders nothing when there is no matched child", () => {
-    const screen = render(NavigationRouter, { mode, initial: "/users", options: { to: "." },
+  it("renders nothing when there is no matched child", async () => {
+    const screen = await render(NavigationRouter, { mode, initial: "/users", options: { to: "." },
       routes: [{ path: "users", Component: Outlet }] });
     expect(screen.container.textContent?.trim()).toBe("");
   });
 
-  it("an explicitly null element does not render a matched child", () => {
-    const screen = render(NavigationRouter, { mode, initial: "/users/profile", options: { to: "." },
+  it("an explicitly null element does not render a matched child", async () => {
+    const screen = await render(NavigationRouter, { mode, initial: "/users/profile", options: { to: "." },
       routes: [{ path: "users", element: null, children: [{ path: "profile", Component: Profile }] }] });
     expect(screen.container.textContent?.trim()).toBe("");
   });
@@ -32,7 +32,7 @@ describe.each(["declarative", "data"] as const)("upstream Outlet/context renderi
         const routes: RouteObject[] = [{ path: "/", Component: provided ? Layout : Outlet,
           children: implicit ? [{ path: "users", children: [leaf] }] : [{ ...leaf, path: "users/profile" }],
         }];
-        const screen = render(NavigationRouter, { mode, initial: "/users/profile", options: { to: "." }, routes });
+        const screen = await render(NavigationRouter, { mode, initial: "/users/profile", options: { to: "." }, routes });
         await expect.element(screen.getByRole("heading", { name: "Profile" })).toBeVisible();
         expect(screen.getByTestId("context").element().textContent).toBe(provided ? '["Mary","Jane","Michael"]' : "undefined");
       });

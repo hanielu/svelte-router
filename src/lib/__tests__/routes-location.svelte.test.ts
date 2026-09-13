@@ -15,7 +15,7 @@ const User = html`<script>
 // sd
 
 describe("<Routes> with a location", () => {
-  it("matches when the location is overridden", () => {
+  it("matches when the location is overridden", async () => {
     let location = {
       pathname: "/home",
       search: "",
@@ -24,7 +24,7 @@ describe("<Routes> with a location", () => {
       key: "r9qntrej",
     };
 
-    let screen = render(
+    let screen = await render(
       html`
 			<script>
 				let {location} = $props();
@@ -45,8 +45,8 @@ describe("<Routes> with a location", () => {
     `);
   });
 
-  it("matches when the location is not overridden", () => {
-    let screen = render(html`
+  it("matches when the location is not overridden", async () => {
+    let screen = await render(html`
         <MemoryRouter initialEntries={["/users/michael"]}>
           <Routes>
             <Route path="home" element={Home} />

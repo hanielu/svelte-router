@@ -34,7 +34,7 @@ describe("useBlocker", () => {
       { path: "/", Component: FormPage },
       { path: "/next", Component: html`<h1>Next</h1>` },
     ]);
-    const screen = render(
+    const screen = await render(
       html`<script>
           let { router } = $props();
         </script>
@@ -105,7 +105,7 @@ describe.each(["PUSH", "REPLACE", "POP"])("upstream useBlocker: %s", action => {
     const capture = vi.fn<(blocker: Blocker) => void>();
     const captureRouter = vi.fn<(router: ReturnType<typeof createMemoryRouter>) => void>();
     const predicate = vi.fn((_args, dirty: boolean) => dirty);
-    const screen = render(BlockerApp, { action, initiallyDirty: decision !== "allow", capture, captureRouter, predicate, loader });
+    const screen = await render(BlockerApp, { action, initiallyDirty: decision !== "allow", capture, captureRouter, predicate, loader });
     const blocker = capture.mock.calls[0][0];
     const router = captureRouter.mock.calls[0][0];
     const initialPath = action === "POP" ? "/contact" : "/";
@@ -172,7 +172,7 @@ describe.each(["PUSH", "REPLACE", "POP"])("upstream useBlocker: %s", action => {
 });
 
 describe("upstream useBlocker lifetime", () => {
-  it("initializes with a boolean false and releases its registration", () => {
+  it("initializes with a boolean false and releases its registration", async () => {
     const capture = vi.fn<(blocker: Blocker) => void>();
     const Page = html`<script>
       let { capture } = $props();
@@ -187,7 +187,7 @@ describe("upstream useBlocker lifetime", () => {
     {#snippet page()}<Page {capture} />{/snippet}
     <RouterProvider {router} />`;
     const captureRouter = vi.fn();
-    const screen = render(App, { capture, captureRouter });
+    const screen = await render(App, { capture, captureRouter });
     const router = captureRouter.mock.calls[0][0];
     expect(blockerSnapshot(capture.mock.calls[0][0])).toEqual(unblocked);
     screen.unmount();
@@ -198,7 +198,7 @@ describe("upstream useBlocker lifetime", () => {
   it("strips basename before invoking the blocker predicate", async () => {
     const predicate = vi.fn(() => false);
     const captureRouter = vi.fn();
-    const screen = render(BlockerApp, { capture: vi.fn(), captureRouter, predicate,
+    const screen = await render(BlockerApp, { capture: vi.fn(), captureRouter, predicate,
       initiallyDirty: true, action: "PUSH", basename: "/base", loader: () => null });
     await expect.element(screen.getByRole("link", { name: "About" })).toHaveAttribute("href", "/base/about");
     await screen.getByRole("link", { name: "About" }).click();
@@ -214,7 +214,7 @@ describe("upstream useBlocker lifetime", () => {
   it("reuses a layout blocker across multiple blocked navigations without registration loops", async () => {
     const capture = vi.fn<(blocker: Blocker) => void>();
     const captureRouter = vi.fn();
-    const screen = render(BlockerApp, { capture, captureRouter, initiallyDirty: true,
+    const screen = await render(BlockerApp, { capture, captureRouter, initiallyDirty: true,
       action: "PUSH", loader: () => null });
     const blocker = capture.mock.calls[0][0];
     for (const heading of ["About", "Contact"]) {

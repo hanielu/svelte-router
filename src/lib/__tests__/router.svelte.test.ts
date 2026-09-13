@@ -7,10 +7,9 @@ import { MemoryRouter, useLocation } from "svelte-router";
 // sd
 
 describe("<Router>", () => {
-  it("throws if another <Router> is already in context", () => {
-    expect(() => {
-      render(html`<MemoryRouter><MemoryRouter /></MemoryRouter>`);
-    }).toThrow(/cannot render a <Router> inside another <Router>/);
+  it("throws if another <Router> is already in context", async () => {
+    await expect(render(html`<MemoryRouter><MemoryRouter /></MemoryRouter>`))
+      .rejects.toThrow(/cannot render a <Router> inside another <Router>/);
   });
 
   it("memoizes the current location across consumer replacement in the same router", async () => {
@@ -20,7 +19,7 @@ describe("<Router>", () => {
       const location = useLocation();
       capture(location.current);
     </script>`;
-    const screen = render(
+    const screen = await render(
       scope(Consumer).html`<script>
       let { capture } = $props();
       let generation = $state(0);

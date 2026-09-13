@@ -123,7 +123,8 @@ changes component lifetime, or loses keyboard behaviour.
 ## Test the consumer's behaviour
 
 The existing Vitest configuration has `client` and `server` projects. Client tests
-match `src/**/*.svelte.{test,spec}.{js,ts}` and run in Chromium through Playwright.
+match `src/**/*.svelte.{test,spec}.{js,ts}` and run in headless Chromium through
+`@vitest/browser-playwright`.
 Other test/spec files use the node project. The common filename `test:unit` does
 not mean all tests are DOM-free.
 
@@ -132,6 +133,13 @@ test such as [`route-hooks.svelte.test.ts`](../src/lib/__tests__/route-hooks.sve
 and its `html`/`scope` usage. Import public entry points through the configured
 `svelte-router` alias. Do not invent JSX, private runtime calls, or mock context
 state when a small real component can exercise the behaviour.
+
+Use `await render(...)` with `vitest-browser-svelte` 3. Initialization failures
+reject that promise, so assert them with `await expect(render(...)).rejects`.
+Await rerenders, unmounts and asynchronous assertions as well. Vitest 4 locators
+and string `toHaveTextContent` assertions can match partial text. Use `{ exact: true }`
+for exact locator labels and anchored patterns or DOM text equality when the
+assertion needs the complete content.
 
 Select tests from the actual risk:
 
@@ -194,12 +202,27 @@ directories. Use the runner's existing project scheduling rather than launching
 duplicate suites. Keep full output available when a gate fails; filtered output
 or a pipeline's final exit status can hide the real result.
 
-The baseline has known type-check debt and test harness noise from the SvelteKit
-site (including Shiki highlighting). Inspect the actual test summary separately
-from those messages. A passing browser case does not make the entire package type
-correct, and a known site error is not permission to ignore a new library failure.
-Improving test isolation is an explicit roadmap task, not something to compensate
-for with blanket log suppression.
+Test mode uses the minimal Svelte compiler/inline-fixture plugins, reusing
+preprocessing and compiler options from `svelte.config.js`. `test:unit` first runs
+`svelte-kit sync`, generating the tsconfig paths from Kit's aliases and `$lib`
+configuration. Vite 8.3 reads those paths with `resolve.tsconfigPaths: true`.
+The explicit `tsconfig: "./tsconfig.json"` is important: the inline plugin's
+virtual modules have no physical source location for automatic tsconfig discovery.
+There is no second alias table or translation bridge in Vite configuration.
+Tests do not start the documentation app's SSR/Shiki pipeline.
+Production build mode still uses SvelteKit, UnoCSS and the site plugins. This
+separates evidence rather than suppressing errors.
+
+The harness was compared with a disposable `sv@0.17.0 create --template library
+--types ts --add vitest="usages:unit,component" --no-install` project. It follows
+the generated provider-factory, headless-browser, client/server project and
+required-assertion setup; the minimal library compiler pipeline is intentional.
+Vitest `4.1.11` is the qualified upgrade from `3.2.4`, not `5.0.0`: with the same
+Vite `8.3.0`, Playwright `1.63.0` and Svelte renderer `3.1.0`, a plain top-left
+`<a href="/bar">Bar</a>` failed to receive a Playwright locator click in the fresh
+project on Vitest 5 and passed on Vitest 4. The router's `useMatches` navigation
+case catches the same regression. Recheck that reproduction before upgrading;
+do not add router-specific event or styling workarounds to bypass it.
 
 The Svelte `5.57.0` upgrade exposed `state_referenced_locally` warnings in existing
 adapters in addition to the earlier 13 type errors. Audit each snapshot's intended

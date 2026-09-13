@@ -22,8 +22,8 @@ const App = html`<div>
 // sd
 
 describe("useLocation", () => {
-  it("returns the current location object", () => {
-    let screen = render(html`
+  it("returns the current location object", async () => {
+    let screen = await render(html`
         <MemoryRouter initialEntries={["/home?the=search#the-hash"]}>
           <Routes>
             <Route path="/home" element={ShowLocation} />
@@ -38,8 +38,8 @@ describe("useLocation", () => {
     `);
   });
 
-  it("returns the scoped location object when nested in <Routes location>", () => {
-    let screen = render(html`
+  it("returns the scoped location object when nested in <Routes location>", async () => {
+    let screen = await render(html`
           <MemoryRouter initialEntries={["/home?the=search#the-hash"]}>
             <App />
           </MemoryRouter>
@@ -51,8 +51,8 @@ describe("useLocation", () => {
     ]);
   });
 
-  it("preserves state from initialEntries", () => {
-    let screen = render(html`
+  it("preserves state from initialEntries", async () => {
+    let screen = await render(html`
         <MemoryRouter
           initialEntries={[{ pathname: "/example", state: { my: "state" }, key: "my-key" }]}
         >

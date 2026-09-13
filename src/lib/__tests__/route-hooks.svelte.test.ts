@@ -26,7 +26,7 @@ describe("declarative route hooks", () => {
       <button onclick={() => navigate("/users/two")}>Push</button>
       <button onclick={() => navigate("/users/three", { replace: true })}>Replace</button>`;
 
-    const screen = render(
+    const screen = await render(
       scope(User).html`
         <MemoryRouter initialEntries={["/users/one"]}>
           <Routes>
@@ -53,7 +53,7 @@ describe("declarative route hooks", () => {
       <button onclick={() => navigate("/projects/two")}>Change project</button>
       <button onclick={() => navigate("details")}>Open details</button>`;
 
-    const screen = render(
+    const screen = await render(
       scope(Project).html`
         <MemoryRouter initialEntries={["/projects/one"]}>
           <Routes>

@@ -13,7 +13,7 @@ import { attachRef } from "../utils/attach-ref.js";
 describe("cached boxes", () => {
   it("shares prototype accessors without sharing instance state", async () => {
     const capture = vi.fn<(values: [WritableBox<number>, ReadableBox<number>, WritableBox<number>][]) => void>();
-    const screen = render(html`<script>
+    const screen = await render(html`<script>
       let { capture } = $props();
       capture([1, 2].map(initial => {
         const state = box(initial);
@@ -52,7 +52,7 @@ describe("cached boxes", () => {
   it("preserves deep reactive state, replacement, and initially undefined writable values", async () => {
     const initial = { nested: { count: 1 } };
     const capture = vi.fn<(value: WritableBox<typeof initial>, empty: WritableBox<number | undefined>) => void>();
-    const screen = render(html`<script lang="ts">
+    const screen = await render(html`<script lang="ts">
       let { getInitial, capture } = $props();
       const value = box(getInitial());
       const empty = box<number>();
@@ -92,7 +92,7 @@ describe("cached boxes", () => {
       flat: { count: number; readonly double: number; shifted: number; label: string };
       reused: boolean;
     }) => void>();
-    const screen = render(html`<script>
+    const screen = await render(html`<script>
       let { capture } = $props();
       const state = box.from(2);
       const readonly = box.with(() => state.current * 2);
@@ -131,7 +131,7 @@ describe("cached boxes", () => {
       setSecond: (value: Payload) => void;
       selectSecond: () => void;
     }) => void>();
-    const screen = render(html`<script lang="ts">
+    const screen = await render(html`<script lang="ts">
       let { getFirst, getSecond, project, capture } = $props();
       let left = $state.raw<undefined | { label: string }>();
       let right = $state.raw<undefined | { label: string }>();
@@ -180,7 +180,7 @@ describe("cached boxes", () => {
       value: WritableBox<{ count: number }>;
       readonly: ReadableBox<{ count: number }>;
     }) => void>();
-    const screen = render(html`<script lang="ts">
+    const screen = await render(html`<script lang="ts">
       let { project, observe, cleanup, capture } = $props();
       const count = box(0);
       const value = box.with(() => project(count.current), v => count.current = v.count);
@@ -226,7 +226,7 @@ describe("cached boxes", () => {
       let { context, label, children } = $props();
       context.setWith(() => ({ label }));
     </script>{@render children()}`;
-    const screen = render(scope(Reader, Provider).html`<script>
+    const screen = await render(scope(Reader, Provider).html`<script>
       let { context, capture } = $props();
       let label = $state("outer");
     </script>
@@ -261,7 +261,7 @@ describe("cached boxes", () => {
   it("preserves writable element-ref attachment and cleanup", async () => {
     const capture = vi.fn<(ref: WritableBox<HTMLDivElement | null>) => void>();
     const changed = vi.fn<(node: HTMLDivElement | null) => void>();
-    const screen = render(html`<script lang="ts">
+    const screen = await render(html`<script lang="ts">
       let { capture, changed } = $props();
       const ref = box<HTMLDivElement | null>(null);
       let shown = $state(true);

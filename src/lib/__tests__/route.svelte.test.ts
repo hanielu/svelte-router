@@ -6,8 +6,8 @@ import { MemoryRouter, Routes, Route } from "svelte-router";
 // sd
 
 describe("A <Route>", () => {
-  it("renders its `element` prop", () => {
-    const screen = render(
+  it("renders its `element` prop", async () => {
+    const screen = await render(
       html`
       <MemoryRouter initialEntries={["/home"]}>
         <Routes>
@@ -27,10 +27,10 @@ describe("A <Route>", () => {
     `);
   });
 
-  it("renders its `Component` prop", () => {
+  it("renders its `Component` prop", async () => {
     const HomeComponent = html`<h1>Home</h1>`;
 
-    const screen = render(
+    const screen = await render(
       scope(HomeComponent).html`
       <MemoryRouter initialEntries={["/home"]}>
         <Routes>
@@ -46,8 +46,8 @@ describe("A <Route>", () => {
     `);
   });
 
-  it("renders its child routes when no `element` prop is given", () => {
-    const screen = render(
+  it("renders its child routes when no `element` prop is given", async () => {
+    const screen = await render(
       html`
       <MemoryRouter initialEntries={["/app/home"]}>
         <Routes>

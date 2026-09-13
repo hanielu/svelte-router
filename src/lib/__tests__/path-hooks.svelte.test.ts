@@ -45,7 +45,7 @@ describe("upstream useHref and basename resolution", () => {
     const routes: RouteObject[] = [{ path: "courses", ...(scenario.nested
       ? { children: [{ path: "advanced-react", Component: Reader }] }
       : { Component: Reader }) }];
-    const screen = render(NavigationRouter, { mode: "declarative", initial: scenario.url, routes, options: { to: scenario.to } });
+    const screen = await render(NavigationRouter, { mode: "declarative", initial: scenario.url, routes, options: { to: scenario.to } });
     await expect.poll(() => screen.getByTestId("href").element().textContent).toBe(scenario.expected);
   });
 
@@ -66,7 +66,7 @@ describe("upstream useHref and basename resolution", () => {
     { to: "../../../dashboard/", expected: "/app/dashboard/" },
   ];
   it.each(basenameCases)("basename $to, trailing URL=$trailing", async scenario => {
-    const screen = render(NavigationRouter, { mode: "declarative", initial: "/app/admin" + (scenario.trailing ? "/" : ""),
+    const screen = await render(NavigationRouter, { mode: "declarative", initial: "/app/admin" + (scenario.trailing ? "/" : ""),
       basename: "/app", routes: [{ path: "admin", Component: Reader }], options: { to: scenario.to } });
     await expect.poll(() => screen.getByTestId("href").element().textContent).toBe(scenario.expected);
     await screen.getByRole("button", { name: "Update" }).click();
@@ -80,7 +80,7 @@ describe("upstream useResolvedPath", () => {
     { name: "partial object", to: { pathname: "/home", search: "user=mj", hash: "#welcome" }, expected: { pathname: "/home", search: "?user=mj", hash: "#welcome" } },
     { name: "question mark inside hash", to: "/home#welcome?user=mj", expected: { pathname: "/home", search: "", hash: "#welcome?user=mj" } },
   ])("$name", async scenario => {
-    const screen = render(NavigationRouter, { mode: "declarative", initial: "/", routes: [{ path: "/", Component: Reader }], options: { to: scenario.to } });
+    const screen = await render(NavigationRouter, { mode: "declarative", initial: "/", routes: [{ path: "/", Component: Reader }], options: { to: scenario.to } });
     await expect.element(screen.getByTestId("resolved")).toHaveTextContent(JSON.stringify(scenario.expected));
   });
 
@@ -95,7 +95,7 @@ describe("upstream useResolvedPath", () => {
     { name: "descendant Routes under splat", routes: [{ path: "foo/*", Component: Descendant }], parent: "/foo" },
   ];
   it.each(configs)("$name: dot, parent, path-relative parent and child paths", async scenario => {
-    const screen = render(NavigationRouter, { mode: "declarative", initial: "/foo/bar", routes: scenario.routes, options: { to: "." } });
+    const screen = await render(NavigationRouter, { mode: "declarative", initial: "/foo/bar", routes: scenario.routes, options: { to: "." } });
     await expect.element(screen.getByTestId("paths")).toHaveTextContent(JSON.stringify([
       "/foo/bar", scenario.parent, "/foo", "/foo/bar/baz/qux", "/foo/bar/baz/qux",
     ]));

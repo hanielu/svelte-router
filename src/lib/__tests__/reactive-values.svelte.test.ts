@@ -52,7 +52,7 @@ describe("live router values", () => {
     <button onclick={() => relative = "path"}>Path relative</button>
     <button onclick={() => read(params.current.id + "|" + location.current.pathname + "|" + href.current)}>Read</button>`;
 
-    const screen = render(scope(Page).html`<script>let { capture, read, observe, cleanup } = $props();</script>
+    const screen = await render(scope(Page).html`<script>let { capture, read, observe, cleanup } = $props();</script>
       <MemoryRouter basename="/base" initialEntries={["/base/projects/one/deep/leaf"]}>
         <Routes><Route path="projects/:id/*">
           {#snippet element()}<Page {capture} {read} {observe} {cleanup} />{/snippet}
@@ -98,7 +98,7 @@ describe("live router values", () => {
     const Page = html`<script>let { capture } = $props(); const location = useLocation();
       const navigate = useNavigate(); capture(location);</script>
       <p>{location.current.pathname}</p><button onclick={() => navigate("/changed")}>Change</button>`;
-    const screen = render(scope(Page).html`<script>let { capture } = $props();</script>
+    const screen = await render(scope(Page).html`<script>let { capture } = $props();</script>
       <MemoryRouter initialEntries={["/one"]}><Page {capture} /></MemoryRouter>
       <MemoryRouter initialEntries={["/two"]}><Page {capture} /></MemoryRouter>`, { capture });
     const [first, second] = capture.mock.calls.map(([value]) => value);
@@ -108,11 +108,11 @@ describe("live router values", () => {
     expect(first).not.toBe(second);
   });
 
-  it("reports missing providers during initialization", () => {
-    expect(() => render(html`<script>useLocation();</script>`)).toThrow(/useLocation.*Router/);
-    expect(() => render(html`<script>useParams();</script>`)).toThrow(/useParams.*Router/);
-    expect(() => render(html`<script>useLoaderData();</script>`)).toThrow(/useLoaderData.*data router/);
-    expect(() => render(html`<script>useRouteId();</script>`)).toThrow(/unique "id"/);
+  it("reports missing providers during initialization", async () => {
+    await expect(render(html`<script>useLocation();</script>`)).rejects.toThrow(/useLocation.*Router/);
+    await expect(render(html`<script>useParams();</script>`)).rejects.toThrow(/useParams.*Router/);
+    await expect(render(html`<script>useLoaderData();</script>`)).rejects.toThrow(/useLoaderData.*data router/);
+    await expect(render(html`<script>useRouteId();</script>`)).rejects.toThrow(/unique "id"/);
   });
 
   it.each(["declarative", "data"])("follows search navigation, defaults, and functional setters in %s mode", async mode => {
@@ -132,8 +132,8 @@ describe("live router values", () => {
       initialEntries: ["/search?q=first"],
     }) : undefined;
     const screen = router
-      ? render(html`<script>let { router } = $props();</script><RouterProvider {router} />`, { router })
-      : render(scope(Page).html`<MemoryRouter initialEntries={["/search?q=first"]}>
+      ? await render(html`<script>let { router } = $props();</script><RouterProvider {router} />`, { router })
+      : await render(scope(Page).html`<MemoryRouter initialEntries={["/search?q=first"]}>
           <Routes><Route path="search" Component={Page} /></Routes></MemoryRouter>`);
     try {
     await expect.element(screen.getByText("query:q=first&mode=default")).toBeVisible();

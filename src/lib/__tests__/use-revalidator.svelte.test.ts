@@ -36,7 +36,7 @@ describe("upstream useRevalidator", () => {
     {#snippet home()}<h1>Home page</h1>{/snippet}
     {#snippet foo()}<h1>Foo page</h1>{/snippet}
     <RouterProvider {router} />`;
-    const screen = render(App, { capture, states, loader });
+    const screen = await render(App, { capture, states, loader });
     expect(loader).not.toHaveBeenCalled();
     for (let index = 0; index < 2; index++) {
       await expect.element(screen.getByTestId("data")).toHaveTextContent(String(index));
@@ -76,7 +76,7 @@ describe("upstream useRevalidator", () => {
       children: [{ path: "child", loader, Component: Child, ErrorBoundary: boundary === "child" ? ErrorPage : undefined }],
     }]);
     try {
-      const screen = render(html`<script>let { router } = $props();</script><RouterProvider {router} />`, { router });
+      const screen = await render(html`<script>let { router } = $props();</script><RouterProvider {router} />`, { router });
       await screen.getByRole("link", { name: "Child" }).click();
       await expect.element(screen.getByText("Error:Broken")).toBeVisible();
       expect(router.state.errors).not.toBeNull();

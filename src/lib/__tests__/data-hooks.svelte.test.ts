@@ -48,7 +48,7 @@ describe("data-router hooks", () => {
       },
     ]);
 
-    const screen = render(
+    const screen = await render(
       html`<script>
           let { router } = $props();
         </script>
@@ -85,7 +85,7 @@ describe("data-router hooks", () => {
       },
     ]);
 
-    const screen = render(
+    const screen = await render(
       html`<script>
           let { router } = $props();
         </script>
@@ -124,7 +124,7 @@ describe("upstream data-memory-router value hooks", () => {
     {#snippet layout()}<Layout {capture} />{/snippet}
     {#snippet bar()}<Bar {capture} />{/snippet}
     <RouterProvider {router} />`;
-    const screen = render(App, { capture, pending: pending.promise });
+    const screen = await render(App, { capture, pending: pending.promise });
     const matches = capture.mock.calls[0][1];
     const root = { id: "0", pathname: "/", params: {}, data: undefined, handle: undefined };
     expect(matches.current).toEqual([root]);
@@ -165,7 +165,7 @@ describe("upstream data-memory-router value hooks", () => {
     {#snippet foo()}<h1>Foo</h1>{/snippet}
     {#snippet child()}<h1>Child</h1>{/snippet}
     <RouterProvider {router} />`;
-    const screen = render(App, { capture });
+    const screen = await render(App, { capture });
     const read = capture.mock.calls[0][0];
     expect(read()).toEqual({ layout: undefined, foo: "FOO", bar: undefined, child: undefined });
     await screen.getByRole("link", { name: "Child" }).click();

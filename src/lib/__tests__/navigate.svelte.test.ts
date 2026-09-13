@@ -25,7 +25,7 @@ describe("<Navigate>", () => {
       <h1>Destination</h1>
       <p>{location.current.state.from}</p>`;
 
-    const screen = render(
+    const screen = await render(
       scope(Destination).html`
         <MemoryRouter initialEntries={["/start"]}>
           <Routes>
@@ -62,7 +62,7 @@ describe("<Navigate>", () => {
       { initialEntries: ["/projects/42"] },
     );
 
-    const screen = render(
+    const screen = await render(
       html`<script>
           let { router } = $props();
         </script>
@@ -77,7 +77,7 @@ describe("<Navigate>", () => {
 
 describe.each(["declarative", "data"] as const)("upstream Navigate: %s", mode => {
   it.each(navigationCases)("$name", async scenario => {
-    const screen = render(NavigationRouter, {
+    const screen = await render(NavigationRouter, {
       mode, initial: scenario.initial, routes: scenario.routes,
       options: { ...scenario, redirect: true },
     });
@@ -107,7 +107,7 @@ describe("Navigate data-router effect lifetime", () => {
     </script>
     {#snippet redirect()}<Redirect to={kind === "absolute" ? "/a/b" : "b"} />{/snippet}
     <RouterProvider {router} />`;
-    const screen = render(ScopedApp, { loader, kind, capture });
+    const screen = await render(ScopedApp, { loader, kind, capture });
     await expect.poll(() => loader.mock.calls.length).toBe(1);
     pending.resolve(null);
     await expect.element(screen.getByRole("heading", { name: "Page B" })).toBeVisible();
@@ -142,7 +142,7 @@ describe("Navigate data-router effect lifetime", () => {
       {#snippet redirect()}<Redirect {timing} />{/snippet}
       <RouterProvider {router} />`;
       const capture = vi.fn();
-      const screen = render(App, { timing, loader, capture });
+      const screen = await render(App, { timing, loader, capture });
       await expect.poll(() => loader.mock.calls.length).toBeGreaterThan(0);
       pending.resolve(null);
       await expect.element(screen.getByTestId("redirect-state")).toHaveTextContent("1");

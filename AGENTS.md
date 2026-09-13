@@ -55,7 +55,11 @@ The foundation audit on 2026-09-13 found:
 
 - Package version `0.0.6`; development compiler and minimum Svelte peer `5.57.0`.
 - Runes enabled in `svelte.config.js`; strict TypeScript with NodeNext resolution.
-- Vite `7.1.2`, Vitest `3.2.4`, and Chromium browser tests through Playwright.
+- Vite `8.3.0`, Vitest `4.1.11`, SvelteKit `2.70.3`, and the Svelte Vite plugin
+  `7.3.0`. Chromium tests use `@vitest/browser-playwright` and async
+  `vitest-browser-svelte` `3.1.0` rendering with Playwright `1.63.0`.
+  Development requires Node `^20.19.0 || ^22.12.0 || >=24.0.0`; verified on
+  `24.13.0`. See the development guide before revisiting the Vitest 5 upgrade.
 - Svelte checking `4.7.6`, packaging `2.5.8`, and locked `svelte2tsx` `0.7.61`
   understand the declaration-tag baseline; compiler syntax probes alone do not
   qualify an older TypeScript/declaration transformer.
@@ -196,6 +200,11 @@ and complete the smallest slice through API, implementation, tests, and docs.
 
 - Run focused browser tests for routing, context, reactivity, DOM events, and
   lifecycle changes; use node tests for pure algorithms.
+- Keep aliases in `svelte.config.js`. The test script syncs Kit's generated
+  tsconfig paths; Vite reads them natively using an explicit root `tsconfig` and
+  `resolve.tsconfigPaths`. Do not duplicate aliases in the test configuration.
+- Await `render()` and async DOM assertions. Use exact locator matching when
+  distinguishing similar labels; do not mistake partial text matches for equality.
 - Treat the corresponding React Router tests as the minimum behavioural checklist.
   Account for every upstream case before calling a counterpart complete. Matching
   test counts, exports and happy paths are insufficient; never comment out an

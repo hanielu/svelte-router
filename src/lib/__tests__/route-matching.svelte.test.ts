@@ -84,8 +84,8 @@ describe("route matching", () => {
     ];
 
     cases.forEach(([path, expected]) => {
-      it(`renders the right elements at ${path}`, () => {
-        const screen = render(
+      it(`renders the right elements at ${path}`, async () => {
+        const screen = await render(
           html`<script>
               let { path, children } = $props();
             </script>

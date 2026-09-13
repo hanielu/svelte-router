@@ -28,7 +28,7 @@ describe("data-router value handles", () => {
     const router = createMemoryRouter([{
       path: "/", loader, Component: html`<p>Recovered</p>`, ErrorBoundary: ErrorView,
     }]);
-    const screen = render(html`<script>let { router } = $props();</script><RouterProvider {router} />`, { router });
+    const screen = await render(html`<script>let { router } = $props();</script><RouterProvider {router} />`, { router });
     try {
       await expect.element(screen.getByText("error:first failure")).toBeVisible();
       await screen.getByRole("button", { name: "count:0" }).click();
@@ -67,7 +67,7 @@ describe("data-router value handles", () => {
     const router = createMemoryRouter([{ path: "items/:id", Component: Page }], {
       basename: "/base", initialEntries: ["/base/items/one"],
     });
-    const screen = render(html`<script>let { router } = $props();</script><RouterProvider {router} />`, { router });
+    const screen = await render(html`<script>let { router } = $props();</script><RouterProvider {router} />`, { router });
     try {
       await expect.element(screen.getByText("transition:false")).toBeVisible();
       await router.navigate("/items/two", { viewTransition: true });
@@ -127,7 +127,7 @@ describe("data-router value handles", () => {
     <button onclick={() => selectedId = selectedId === "page" ? "root" : "absent"}>Select</button>
     <button onclick={() => read = data.current?.label + ":" + revalidator.state}>Read</button>
     <p>read:{read}</p>`;
-    const screen = render(scope(Page).html`<script>
+    const screen = await render(scope(Page).html`<script>
       let { loader, action, capture, ready } = $props();
       const router = createMemoryRouter([{
         id: "root", path: "/", Component: Outlet, loader: () => ({ label: "root" }),
@@ -215,7 +215,7 @@ describe("data-router value handles", () => {
     }, { path: "/save", action: () => { submitted("save"); return null; } }], {
       basename: "/base", initialEntries: ["/base/?q=one"],
     });
-    const screen = render(html`<script>let { router } = $props();</script><RouterProvider {router} />`, { router });
+    const screen = await render(html`<script>let { router } = $props();</script><RouterProvider {router} />`, { router });
     try {
       await expect.element(screen.getByText("destination:/base?index&q=one")).toBeVisible();
       await screen.getByRole("button", { name: "Context", exact: true }).click();

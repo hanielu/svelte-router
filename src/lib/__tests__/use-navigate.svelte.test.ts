@@ -44,7 +44,7 @@ describe("useNavigate", () => {
         <button onclick="{handleClick}">click me</button>
       </div> `;
 
-    let screen = render(
+    let screen = await render(
       scope(Home).html`
 			<MemoryRouter initialEntries={["/home"]}>
 				<Routes>
@@ -74,7 +74,7 @@ describe("useNavigate", () => {
         <button onclick={() => navigate("?key=value")}>click me</button>
       </div> `;
 
-    let screen = render(
+    let screen = await render(
       scope(Home).html`
 			<MemoryRouter initialEntries={["/home"]}>
 				<Routes>
@@ -100,7 +100,7 @@ describe("useNavigate", () => {
         <button onclick={() => navigate("?key=value")}>click me</button>
       </div> `;
 
-    let screen = render(
+    let screen = await render(
       scope(Home).html`
 			<MemoryRouter basename="/basename" initialEntries={["/basename/home"]}>
 				<Routes>
@@ -127,7 +127,7 @@ describe("useNavigate", () => {
 		</div>
 		`;
 
-    let screen = render(
+    let screen = await render(
       scope(Home).html`
 			<MemoryRouter initialEntries={["/home?key=value"]}>
           <Routes>
@@ -144,7 +144,7 @@ describe("useNavigate", () => {
     await expect.element(screen.getByText("/home")).toBeVisible();
   });
 
-  it("throws on invalid destination path objects", () => {
+  it("throws on invalid destination path objects", async () => {
     const captureNavigate = vi.fn<(navigate: ReturnType<typeof useNavigate>) => void>();
     const Home = html`<script>
       let { captureNavigate } = $props();
@@ -153,7 +153,7 @@ describe("useNavigate", () => {
     </script>
     <h1>Home</h1>`;
 
-    render(
+    await render(
       scope(Home).html`
         <script>let { captureNavigate } = $props();</script>
         <MemoryRouter initialEntries={["/home"]}>
@@ -225,7 +225,7 @@ describe("useNavigate", () => {
         }),
       },
     ]);
-    const screen = render(
+    const screen = await render(
       html`<script>
           let { router } = $props();
         </script>
@@ -273,14 +273,14 @@ describe("useNavigate", () => {
     });
 
     describe("MemoryRouter", () => {
-      it("does not allow navigation from the render cycle", () => {
+      it("does not allow navigation from the render cycle", async () => {
         const Home = html`<script>
             let navigate = useNavigate();
             navigate("/about");
           </script>
           <h1>Home</h1>`;
 
-        const screen = render(
+        const screen = await render(
           scope(Home).html`
             <MemoryRouter>
               <Routes>
@@ -300,7 +300,7 @@ describe("useNavigate", () => {
         );
       });
 
-      it("allows navigation from effects", () => {
+      it("allows navigation from effects", async () => {
         const Home = html`<script>
             let navigate = useNavigate();
             $effect(() => {
@@ -309,7 +309,7 @@ describe("useNavigate", () => {
           </script>
           <h1>Home</h1> `;
 
-        const screen = render(
+        const screen = await render(
           scope(Home).html`
             <MemoryRouter>
               <Routes>
@@ -359,7 +359,7 @@ describe("useNavigate", () => {
           </script>
           <Child {onChildRendered} />`;
 
-        const screen = render(
+        const screen = await render(
           scope(Parent).html`
             <MemoryRouter initialEntries={["/home"]}>
 							<Routes>
@@ -380,7 +380,7 @@ describe("useNavigate", () => {
     });
 
     describe("RouterProvider", () => {
-      it("does not allow navigation from the render cycle", () => {
+      it("does not allow navigation from the render cycle", async () => {
         let router = createMemoryRouter([
           {
             index: true,
@@ -395,7 +395,7 @@ describe("useNavigate", () => {
             element: html`<h1>About</h1>` as Snippet,
           },
         ]);
-        let screen = render(
+        let screen = await render(
           html`<script>
               let { router } = $props();
             </script>
@@ -409,7 +409,7 @@ describe("useNavigate", () => {
         );
       });
 
-      it("allows navigation from effects", () => {
+      it("allows navigation from effects", async () => {
         let router = createMemoryRouter([
           {
             index: true,
@@ -426,7 +426,7 @@ describe("useNavigate", () => {
             element: html`<h1>About</h1>` as Snippet,
           },
         ]);
-        let screen = render(
+        let screen = await render(
           html`<script>
               let { router } = $props();
             </script>
@@ -466,7 +466,7 @@ describe("useNavigate", () => {
             element: html`<h1>About</h1>` as Snippet,
           },
         ]);
-        let screen = render(
+        let screen = await render(
           html`<script>
               let { router } = $props();
             </script>
@@ -496,7 +496,7 @@ describe("useNavigate", () => {
         const ShowLocationState = html`<script>const location = useLocation();</script>
           <p>location.state:{JSON.stringify(location.current.state)}</p>`;
 
-        const screen = render(
+        const screen = await render(
           scope(Home, ShowLocationState).html`
 					<MemoryRouter initialEntries={["/home"]}>
 						<Routes>
@@ -522,7 +522,7 @@ describe("useNavigate", () => {
 
           <button onclick={() => navigate("/about")}>Go to about</button>`;
 
-        const screen = render(
+        const screen = await render(
           scope(Home).html`
             <MemoryRouter initialEntries={["/home"]}>
               <Routes>
@@ -544,7 +544,7 @@ describe("useNavigate", () => {
 
 describe.each(["declarative", "data"] as const)("upstream useNavigate: %s", mode => {
   it.each(navigationCases)("$name", async scenario => {
-    const screen = render(NavigationRouter, {
+    const screen = await render(NavigationRouter, {
       mode, initial: scenario.initial, routes: scenario.routes, options: scenario,
     });
     await screen.getByRole("button", { name: "Navigate", exact: true }).click();
@@ -578,7 +578,7 @@ describe.each(["declarative", "data"] as const)("upstream useNavigate: %s", mode
         <Routes><Route path="projects/:id/*" element={page} /></Routes>
       </MemoryRouter>
     {/if}`;
-    const screen = render(App, { mode, capture });
+    const screen = await render(App, { mode, capture });
     await screen.getByRole("button", { name: "Increment" }).click();
     const [navigate, location] = capture.mock.calls[0];
     await navigate("/projects/two");
@@ -598,7 +598,7 @@ describe.each(["declarative", "data"] as const)("upstream useNavigate: %s", mode
     const Descendant = scope(Home).html`<Routes><Route index Component={Home} /></Routes>`;
     const Destination = html`<script>const location = useLocation();</script>
       <h1>Path</h1><p>{location.current.pathname}</p>`;
-    const screen = render(NavigationRouter, {
+    const screen = await render(NavigationRouter, {
       mode, initial: "/base", basename: "/base", options: { to: "/path" },
       routes: [
         { path: descendant ? "/*" : "/", Component: descendant ? Descendant : Home },

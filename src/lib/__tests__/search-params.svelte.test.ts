@@ -27,7 +27,7 @@ describe("upstream useSearchParams", () => {
     <form onsubmit={submit}>
       <input aria-label="Query" bind:value={query} /><button>Search</button>
     </form>`;
-    const screen = render(scope(Page).html`<script>let { functional } = $props();</script>
+    const screen = await render(scope(Page).html`<script>let { functional } = $props();</script>
       <MemoryRouter initialEntries={["/search?q=Michael+Jackson"]}>
         <Routes><Route path="search">{#snippet element()}<Page {functional} />{/snippet}</Route></Routes>
       </MemoryRouter>`, { functional });
@@ -46,7 +46,7 @@ describe("upstream useSearchParams", () => {
     <p data-testid="params">{params.current.toString()}</p>
     <p data-testid="search">{location.current.search}</p>
     <button onclick={() => setParams({})}>Clear</button>`;
-    const screen = render(scope(Page).html`<MemoryRouter initialEntries={["/search?value=initial"]}>
+    const screen = await render(scope(Page).html`<MemoryRouter initialEntries={["/search?value=initial"]}>
       <Routes><Route path="search" Component={Page} /></Routes>
     </MemoryRouter>`);
     await expect.element(screen.getByTestId("params")).toHaveTextContent("value=initial&a=1&b=2");
@@ -73,7 +73,7 @@ describe("upstream useSearchParams", () => {
     {#if blocker.state === "blocked"}<button onclick={() => blocker.proceed()}>Proceed</button>{/if}`;
     const router = createBrowserRouter([{ path: "/", Component: Page }], { window: isolated.window });
     try {
-      const screen = render(html`<script>let { router } = $props();</script><RouterProvider {router} />`, { router });
+      const screen = await render(html`<script>let { router } = $props();</script><RouterProvider {router} />`, { router });
       await expect.element(screen.getByTestId("output")).toHaveTextContent("||unblocked");
       await screen.getByRole("button", { name: "First" }).click();
       await expect.element(screen.getByTestId("output")).toHaveTextContent("?foo=bar|foo=bar|unblocked");

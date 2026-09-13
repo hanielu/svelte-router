@@ -8,6 +8,7 @@ llms/
 .netlify
 .wrangler
 /.svelte-kit
+/.vitest
 /build
 /dist
 

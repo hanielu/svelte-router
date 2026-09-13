@@ -11,8 +11,8 @@ const Params = html`<script>const params = useParams();</script><pre>{JSON.strin
 describe("upstream useParams", () => {
   afterEach(() => vi.restoreAllMocks());
 
-  it("returns an empty map outside a matched route", () => {
-    const screen = render(scope(Params).html`<MemoryRouter initialEntries={["/home"]}><Params /></MemoryRouter>`);
+  it("returns an empty map outside a matched route", async () => {
+    const screen = await render(scope(Params).html`<MemoryRouter initialEntries={["/home"]}><Params /></MemoryRouter>`);
     expect(screen.getByText("{}")).toBeVisible();
   });
 
@@ -24,15 +24,15 @@ describe("upstream useParams", () => {
     { path: "blog/:slug", url: "/blog/react%2router", expected: { slug: "react%2router" }, malformed: true },
   ])("decodes $url", async scenario => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-    const screen = render(scope(Params).html`<script>let { scenario } = $props();</script>
+    const screen = await render(scope(Params).html`<script>let { scenario } = $props();</script>
       <MemoryRouter initialEntries={[scenario.url]}><Routes><Route path={scenario.path} Component={Params} /></Routes></MemoryRouter>`, { scenario });
     await expect.element(screen.getByText(JSON.stringify(scenario.expected), { exact: true })).toBeVisible();
     if (scenario.malformed) expect(warn).toHaveBeenCalledWith(expect.stringContaining("malformed URL segment"));
     else expect(warn).not.toHaveBeenCalled();
   });
 
-  it("combines parent and child params", () => {
-    const screen = render(scope(Params).html`<MemoryRouter initialEntries={["/users/mjackson/courses/react-router"]}>
+  it("combines parent and child params", async () => {
+    const screen = await render(scope(Params).html`<MemoryRouter initialEntries={["/users/mjackson/courses/react-router"]}>
       <Routes><Route path="users/:username" Component={Outlet}>
         <Route path="courses/:course" Component={Params} />
       </Route></Routes>
@@ -40,8 +40,8 @@ describe("upstream useParams", () => {
     expect(screen.getByText('{"username":"mjackson","course":"react-router"}')).toBeVisible();
   });
 
-  it("exposes matched child params to the parent even when it has no Outlet", () => {
-    const screen = render(scope(Params).html`<MemoryRouter initialEntries={["/blog/react-router"]}>
+  it("exposes matched child params to the parent even when it has no Outlet", async () => {
+    const screen = await render(scope(Params).html`<MemoryRouter initialEntries={["/blog/react-router"]}>
       <Routes><Route path="blog" Component={Params}><Route path=":slug" element={null} /></Route></Routes>
     </MemoryRouter>`);
     expect(screen.getByText('{"slug":"react-router"}')).toBeVisible();
@@ -62,7 +62,7 @@ describe("upstream useMatch", () => {
     { url: "/home", pattern: "about", expected: null },
   ])("$pattern at $url, including memoization after unrelated state updates", async scenario => {
     const capture = vi.fn();
-    const screen = render(scope(Match).html`<script>let { scenario, capture } = $props();</script>
+    const screen = await render(scope(Match).html`<script>let { scenario, capture } = $props();</script>
       <MemoryRouter initialEntries={[scenario.url]}><Routes><Route path="/">{#snippet element()}
         <Match pattern={scenario.pattern} {capture} />
       {/snippet}<Route path="home" /></Route></Routes></MemoryRouter>`, { scenario, capture });

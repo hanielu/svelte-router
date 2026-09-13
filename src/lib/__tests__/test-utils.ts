@@ -121,7 +121,7 @@ function isChildFn(x: unknown): x is MountChildren {
  *
  * @example
  * ```ts
- * const renderer = render(anchor => {
+ * const renderer = await render(anchor => {
  *   const m = createMount(anchor);
  *   m(MyComponent, { prop: "value" });
  * });
@@ -204,7 +204,7 @@ interface RenderableMount {
  * @example
  * ```ts
  * // Clean API - no wrapper functions needed
- * const renderer = render(
+ * const renderer = await render(
  *   m(MemoryRouter, { basename: "/app" }, mount =>
  *     mount(Routes, mount =>
  *       mount(Route, {
@@ -216,7 +216,7 @@ interface RenderableMount {
  * );
  *
  * // Compare to the old way:
- * const renderer = render(anchor => {
+ * const renderer = await render(anchor => {
  *   const mount = createMount(anchor);
  *   mount(MemoryRouter, { basename: "/app" }, mount => {
  *     // ... same nesting
@@ -234,7 +234,7 @@ export const m: RenderableMount = (component, propsOrChild?, maybeChild?) => {
   };
 };
 
-import type { Locator } from "@vitest/browser/context";
+import type { Locator } from "vitest/browser";
 
 /**
  * Defines the shape of a Svelte element with a compiler-generated click handler.
