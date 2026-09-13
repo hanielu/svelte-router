@@ -6,6 +6,9 @@ A powerful Svelte 5 port of React Router - the modern, lightweight, performant, 
 
 ## Quick start
 
+This branch targets Svelte `5.57.0` or newer within Svelte 5. The package is still
+`0.0.6`; unreleased branch changes are not implied to be on npm yet.
+
 Install it:
 
 ```bash
@@ -18,7 +21,9 @@ pnpm add @hvniel/svelte-router
 
 ## Overview
 
-This library provides a complete port of React Router to Svelte 5, maintaining feature parity with the original React implementation while adapting to Svelte's reactivity system. All documentation and APIs from the [original React Router][react-router-docs] library apply here, with some Svelte-specific adaptations.
+This library is building toward React Router's declarative- and data-mode behaviour while adapting the API to Svelte 5. It is not yet a complete port; use the [React Router parity plan](./react-router-parity.md) to see what is tested, partial, or missing.
+
+The [upstream test audit](./docs/test-parity.md) records the pinned React Router revision, completed counterpart suites, and explicit Svelte adaptations. A passing local suite is not a claim that the entire upstream suite has been ported.
 
 The router supports both **data routing** and **declarative routing** modes, giving you flexibility in how you structure your application.
 
@@ -35,16 +40,24 @@ The router supports both **data routing** and **declarative routing** modes, giv
 - [Key Differences from React Router](#key-differences-from-react-router)
 - [Core Concepts](#core-concepts)
 - [API Reference](#api-reference)
+- [React Router parity plan](./react-router-parity.md)
+- [Contributing](#contributing)
 
 ## Routing Modes
 
 ### Data Routing Mode
 
-Data routing provides a more modern approach with centralized route configuration, built-in data loading, and better error handling:
+Data routing registers route objects with an engine that owns navigation,
+loaders/actions, revalidation, and blockers. This example is a client-side SPA
+entry; `Root.svelte` renders an `Outlet`, and `Home.svelte` is application UI:
 
 ```svelte
-<script>
+<script lang="ts">
+  import { onDestroy } from 'svelte';
   import { createBrowserRouter, RouterProvider } from '@hvniel/svelte-router';
+  import Root from './Root.svelte';
+  import Home from './Home.svelte';
+  import User, { loader as userLoader } from './User.svelte';
 
   const router = createBrowserRouter([
     {
@@ -56,20 +69,23 @@ Data routing provides a more modern approach with centralized route configuratio
           Component: Home,
         },
         {
-          path: "/users/:id",
+          path: "users/:id",
           Component: User,
-          loader: async ({ params }) => {
-            const response = await fetch(`/api/users/${params.id}`);
-            return response.json();
-          },
+          loader: userLoader,
         },
       ],
     },
   ]);
+
+  // This entry creates and owns the engine, not merely its subscription.
+  onDestroy(() => router.dispose());
 </script>
 
 <RouterProvider {router} />
 ```
+
+The `User.svelte` component and loader are shown below. Exporting a loader from a
+component does not register it automatically; the `loader` route property does.
 
 ### Declarative Routing Mode
 
@@ -92,14 +108,19 @@ Declarative routing uses familiar component-based syntax for defining routes:
 </BrowserRouter>
 ```
 
+Both modes are useful. A descendant `Routes` table can also render under a data
+router's splat route, but its definitions do not become engine-managed
+loader/action routes. In `0.0.6`, `useBlocker` requires a data router, even if the
+application owns its data fetching. See [router architecture](docs/architecture.md).
+
 ## Key Features
 
 - **Multiple Router Types**: BrowserRouter, HashRouter, MemoryRouter, and StaticRouter
 - **Data Loading**: Built-in loader and action functions for data fetching
-- **Nested Routing**: Full support for nested routes and layouts
-- **Progressive Enhancement**: Works with or without JavaScript
-- **Type Safety**: Full TypeScript support with proper type inference
-- **Svelte 5 Native**: Built specifically for Svelte 5 with proper reactivity
+- **Nested Routing**: Nested routes and layouts through `Outlet`
+- **Native HTML**: Links and forms enhance ordinary elements; a client-only app still requires JavaScript
+- **TypeScript**: Typed APIs, with outstanding package/type conformance work tracked in the parity plan
+- **Svelte 5**: Components, snippets, runes, and live readonly `.current` value handles
 
 ## Examples
 
@@ -123,28 +144,42 @@ Declarative routing uses familiar component-based syntax for defining routes:
 
 ### Data Loading with Loaders
 
+This is the component registered by the data-router example above. The sample
+assumes `/api/users/:id` returns a user object with a string `name`:
+
 ```svelte
 <!-- User.svelte -->
-<script module>
-  export const loader = async ({ params }) => {
-    const response = await fetch(`/api/users/${params.id}`);
-    const user = await response.json();
-    return { user };
-  };
+<script module lang="ts">
+  import type { LoaderFunctionArgs } from '@hvniel/svelte-router';
+
+  export async function loader({ params, request }: LoaderFunctionArgs) {
+    const response = await fetch(`/api/users/${params.id}`, {
+      signal: request.signal,
+    });
+    if (!response.ok) throw response;
+    const user: unknown = await response.json();
+    if (!user || typeof user !== 'object' || !('name' in user) || typeof user.name !== 'string') {
+      throw new Error('Expected a user with a string name');
+    }
+    return { user: { name: user.name } };
+  }
 </script>
 
-<script>
+<script lang="ts">
   import { useLoaderData, useParams } from '@hvniel/svelte-router';
 
   const data = useLoaderData<typeof loader>();
-  const params = useParams();
+  const params = useParams<'id'>();
 </script>
 
-<h1>User: {data.user.name}</h1>
-<p>ID: {params.id}</p>
+<h1>User: {data.current?.user.name ?? 'Loading...'}</h1>
+<p>ID: {params.current.id}</p>
 ```
 
 ### Forms and Actions
+
+Render this inside `RouterProvider`, with an `action` registered on the `/login`
+data route. The form markup alone does not create the action or a server endpoint:
 
 ```svelte
 <script>
@@ -188,9 +223,11 @@ In React Router, you can use either `Component` or `element` props for route def
 
 ```svelte
 <script>
+  import { Route } from '@hvniel/svelte-router';
   import UserProfile from './UserProfile.svelte';
 </script>
 
+<!-- Alternative definitions inside Routes; choose one. -->
 <!-- Using Component (same as React Router) -->
 <Route path="/user/:id" Component={UserProfile} />
 
@@ -200,42 +237,50 @@ In React Router, you can use either `Component` or `element` props for route def
     <UserProfile />
   {/snippet}
 </Route>
-
-<!-- For data routing -->
-const router = createBrowserRouter([
-  {
-    path: "/user/:id",
-    Component: UserProfile, // Component reference
-    // OR
-    element: userPageSnippet, // Snippet reference
-  },
-]);
 ```
+
+For data routing, put `Component: UserProfile` on the route object, as in the
+entry example. Its alternative `element` property accepts a snippet reference,
+not JSX or JavaScript written directly into component markup.
 
 ### Svelte 5 Reactivity Integration
 
-In data routing mode, you can access reactive data using the provided hooks:
+In both routing modes, value hooks return stable readonly `.current` handles.
+Initialize them once; reads stay live without remounting the component:
 
 ```svelte
 <script>
   import { useLocation, useParams } from '@hvniel/svelte-router';
 
-  // Use $derived for reactive computations
-  const location = $derived(useLocation());
+  const location = useLocation();
   const params = useParams();
 
   // Use $effect for side effects
   $effect(() => {
-    console.log('Location changed:', location.pathname);
+    console.log('Location changed:', location.current.pathname);
   });
 </script>
+
+<p>{location.current.pathname}: {params.current.id ?? 'no user selected'}</p>
 ```
+
+This is an implemented, **unreleased breaking change from 0.0.6**. Replace
+`$derived(useLocation())` with `useLocation()` and read `location.current`.
+Use getters for changing inputs: `useHref(() => to, () => ({ relative }))`.
+`$derived` remains useful for calculations from the current value. See the
+[reactivity guide](docs/svelte-reactivity.md) for the full migration contract.
 
 ### Router Configuration
 
-Both routing modes support the same router types:
+Declarative mode supplies browser, hash, and memory wrappers (fragments shown
+below). Data mode uses the corresponding `create*Router` functions and
+`RouterProvider` instead:
 
 ```svelte
+<script>
+  import { BrowserRouter, HashRouter, MemoryRouter } from '@hvniel/svelte-router';
+</script>
+
 <!-- Browser History (clean URLs) -->
 <BrowserRouter>
   <!-- routes -->
@@ -254,7 +299,7 @@ Both routing modes support the same router types:
 
 ## Core Concepts
 
-All core concepts from React Router remain the same:
+The library shares these core routing concepts with React Router:
 
 - **Routers**: BrowserRouter, HashRouter, MemoryRouter, StaticRouter
 - **Route Matching**: Path patterns, dynamic segments, nested routes
@@ -262,7 +307,9 @@ All core concepts from React Router remain the same:
 - **Data Loading**: Loaders, actions, and error boundaries
 - **Route Protection**: Route guards and authentication flows
 
-For detailed documentation on these concepts, please refer to the [original React Router documentation][react-router-docs].
+Use the [original React Router documentation][react-router-docs] for conceptual
+background, and this package's [parity plan](react-router-parity.md) for actual
+support and limitations. Client-side route protection is not server authorization.
 
 ## API Reference
 
@@ -289,6 +336,7 @@ For detailed documentation on these concepts, please refer to the [original Reac
 | Component | Description                            |
 | --------- | -------------------------------------- |
 | `Link`    | Navigation link component              |
+| `NavLink` | Link with active/pending state and snippet content |
 | `Form`    | Enhanced form with routing integration |
 
 ### Data Router Creation Functions
@@ -304,10 +352,10 @@ For detailed documentation on these concepts, please refer to the [original Reac
 | Hook                | Description                                    |
 | ------------------- | ---------------------------------------------- |
 | `useNavigate()`     | Returns a function for programmatic navigation |
-| `useLocation()`     | Returns the current location object            |
-| `useParams()`       | Returns the current route parameters           |
-| `useSearchParams()` | Returns URL search parameters                  |
-| `useHref(to)`       | Returns the href for a given destination       |
+| `useLocation()`     | Read the location through `.current`           |
+| `useParams()`       | Read current route params through `.current`   |
+| `useSearchParams()` | Returns `[paramsHandle, setParams]`; read `paramsHandle.current` |
+| `useHref(to)`       | Returns a live href handle; accepts a value or getter |
 
 ### Data Hooks (Data Routing Mode)
 
@@ -318,17 +366,34 @@ For detailed documentation on these concepts, please refer to the [original Reac
 | `useRouteError()`    | Returns the current route error                       |
 | `useNavigation()`    | Returns navigation state information                  |
 | `useSubmit()`        | Returns a function to submit forms programmatically   |
-| `useFetcher()`       | Returns a fetcher for loading data without navigation |
-| `useRevalidator()`   | Returns a function to revalidate route data           |
+| `useRevalidator()`   | Returns a `revalidate()` command and live readonly `state` |
+
+`useFetcher`/`useFetchers` are planned, not current exports. Value readers such as
+`useNavigation` and `useLoaderData` return readonly `.current` handles. Loader and
+action data may be `undefined` before it exists. `useSubmit` remains a command.
 
 ### Route Definition Types
 
 | Interface        | Description                                 |
 | ---------------- | ------------------------------------------- |
-| `RouteObject`    | Route configuration object for data routing |
 | `LoaderFunction` | Type for route loader functions             |
 | `ActionFunction` | Type for route action functions             |
-| `ErrorBoundary`  | Type for error boundary components          |
+
+The Svelte-specific `RouteObject` type exists internally but is not currently
+re-exported from the package root. `ErrorBoundary` is a route property accepting a
+Svelte component, not an exported interface. Do not import either as a public type.
+
+## Contributing
+
+Start with [AGENTS.md](AGENTS.md), then the relevant guide:
+
+- [Architecture and ownership](docs/architecture.md)
+- [Svelte reactivity and API design](docs/svelte-reactivity.md)
+- [Development, compiler probes, and verification](docs/frontend-development.md)
+
+These guides define modern Svelte conventions and how to correct outdated
+assumptions. The [parity plan](react-router-parity.md) tracks capability evidence;
+the historical `todos.md` checklist is not a support contract.
 
 ## License
 

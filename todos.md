@@ -1,5 +1,8 @@
 ## TODOS
 
+> This is a legacy implementation snapshot. The maintained, test-backed roadmap is
+> [react-router-parity.md](./react-router-parity.md).
+
 - [ ] Find every reference to react and make sure it's either used correctly in relation to svelte or removed
 - [ ] Replace every react-router with svelte-router
 
