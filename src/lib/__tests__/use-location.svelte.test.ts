@@ -9,7 +9,7 @@ const ShowLocation = html`<script>
     let location = useLocation();
   </script>
 
-  <pre>{JSON.stringify(location)}</pre>`;
+  <pre>{JSON.stringify(location.current)}</pre>`;
 
 const App = html`<div>
   <Routes>
@@ -45,16 +45,10 @@ describe("useLocation", () => {
           </MemoryRouter>
         	`);
 
-    expect(screen.container.firstElementChild).toMatchSnapshot(`
-      <div>
-        <pre>
-          {"pathname":"/home","search":"?the=search","hash":"#the-hash","state":null,"key":"default"}
-        </pre>
-        <pre>
-          {"pathname":"/scoped","search":"?scoped=search","hash":"#scoped-hash","state":null,"key":"default"}
-        </pre>
-      </div>
-    `);
+    expect(Array.from(screen.container.querySelectorAll("pre"), node => JSON.parse(node.textContent!))).toEqual([
+      { pathname: "/home", search: "?the=search", hash: "#the-hash", state: null, key: "default" },
+      { pathname: "/scoped", search: "?scoped=search", hash: "#scoped-hash", state: null, key: "default" },
+    ]);
   });
 
   it("preserves state from initialEntries", () => {

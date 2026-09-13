@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Snippet } from "svelte";
+  import type { Component as SvelteComponent, Snippet } from "svelte";
   import {
     DataRouterContext,
     RouteContext,
@@ -11,10 +11,11 @@
   interface RenderedRouteProps {
     routeContext: RouteContextObject;
     match: RouteMatch<string, RouteObject>;
-    children: Snippet | null;
+    Component?: SvelteComponent | null;
+    children: Snippet | null | undefined;
   }
 
-  let { routeContext, match, children }: RenderedRouteProps = $props();
+  let { routeContext, match, Component, children }: RenderedRouteProps = $props();
 
   // TODO: (haniel) come back to this
   const dataRouterContext = DataRouterContext.current;
@@ -38,4 +39,8 @@
   }));
 </script>
 
-{@render children?.()}
+{#if Component}
+  <Component />
+{:else}
+  {@render (children === undefined ? routeContext.outlet : children)?.()}
+{/if}

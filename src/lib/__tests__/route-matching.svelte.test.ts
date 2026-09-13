@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { render } from "vitest-browser-svelte";
 import { html } from "test-utils";
 import type { Snippet } from "svelte";
+import { renderedMarkup } from "./fixtures/rendered-markup.js";
 
 // svelte:defs
 import { MemoryRouter, Outlet, Routes, Route, useParams, useRoutes } from "svelte-router";
@@ -12,10 +13,10 @@ const Courses = html`<div>
 </div>`;
 
 const Course = html`<script>
-    let { id } = useParams();
+    const params = useParams();
   </script>
   <div>
-    <h2>Course {id}</h2>
+    <h2>Course {params.current.id}</h2>
     <Outlet />
   </div>`;
 
@@ -69,19 +70,20 @@ let routes = [
 
 describe("route matching", () => {
   function describeRouteMatching(routes: Snippet) {
-    let testPaths = [
-      "/courses",
-      "/courses/routing",
-      "/courses/routing/grades",
-      "/courses/new",
-      "/courses/not/found",
-      "/courses/react-fundamentals",
-      "/courses/advanced-react",
-      "/",
-      "/not-found",
+    // The upstream snapshots' complete DOM shape/content, without compiler anchors.
+    const cases = [
+      ["/courses", "<div><h1>Courses</h1><p>All Courses</p></div>"],
+      ["/courses/routing", "<div><h1>Courses</h1><div><h2>Course routing</h2></div></div>"],
+      ["/courses/routing/grades", "<div><h1>Courses</h1><div><h2>Course routing</h2><p>Course Grades</p></div></div>"],
+      ["/courses/new", "<div><h1>Courses</h1><p>New Course</p></div>"],
+      ["/courses/not/found", "<div><h1>Courses</h1><p>Course Not Found</p></div>"],
+      ["/courses/react-fundamentals", "<div><h1>Welcome to React Training</h1><p>React Fundamentals</p></div>"],
+      ["/courses/advanced-react", "<div><h1>Welcome to React Training</h1><p>Advanced React</p></div>"],
+      ["/", "<p>Home</p>"],
+      ["/not-found", "<p>Not Found</p>"],
     ];
 
-    testPaths.forEach(path => {
+    cases.forEach(([path, expected]) => {
       it(`renders the right elements at ${path}`, () => {
         const screen = render(
           html`<script>
@@ -91,7 +93,8 @@ describe("route matching", () => {
           { path, children: routes }
         );
 
-        expect(screen.container.firstElementChild).toMatchSnapshot();
+        expect(screen.container.children).toHaveLength(1);
+        expect(renderedMarkup(screen.container.firstElementChild)).toBe(expected);
       });
     });
   }

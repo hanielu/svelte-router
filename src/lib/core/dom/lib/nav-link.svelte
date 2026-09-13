@@ -53,17 +53,17 @@
   const navigationContext = NavigationContext.get();
   const viewTransitionContext = ViewTransitionContext.get();
 
-  const path = $derived(useResolvedPath(to, { relative }));
-  const location = $derived(useLocation());
+  const path = useResolvedPath(() => to, () => ({ relative }));
+  const location = useLocation();
   const routerState = $derived(dataRouterStateContext.current);
 
   const toPathname = $derived.by(() => {
     const navigator = navigationContext.current.navigator;
-    return navigator.encodeLocation ? navigator.encodeLocation(path).pathname : path.pathname;
+    return navigator.encodeLocation ? navigator.encodeLocation(path.current).pathname : path.current.pathname;
   });
 
   const locationPathname = $derived(
-    caseSensitive ? location.pathname : location.pathname.toLowerCase()
+    caseSensitive ? location.current.pathname : location.current.pathname.toLowerCase()
   );
   const comparableToPathname = $derived(
     caseSensitive ? toPathname : toPathname.toLowerCase()
@@ -111,7 +111,7 @@
       stripBasename(transition.nextLocation.pathname, basename) ||
       transition.nextLocation.pathname;
 
-    return Boolean(matchPath(path.pathname, currentPath) || matchPath(path.pathname, nextPath));
+    return Boolean(matchPath(path.current.pathname, currentPath) || matchPath(path.current.pathname, nextPath));
   });
 
   const renderState = $derived<NavLinkRenderProps>({

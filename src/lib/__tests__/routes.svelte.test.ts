@@ -4,7 +4,7 @@ import { MemoryRouter, Routes, Route } from "svelte-router";
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render } from "vitest-browser-svelte";
-import { html } from "test-utils";
+import { html, scope } from "test-utils";
 
 describe("<Routes>", () => {
   let consoleWarn: ReturnType<typeof vi.spyOn>;
@@ -95,11 +95,31 @@ describe("<Routes>", () => {
     `);
   });
 
-  // not applicable to svelte, there's no fragment component
-  // it("renders with React.Fragment children", () => {});
+  it("registers grouped route definitions through a snippet (Fragment adaptation)", async () => {
+    const screen = render(html`
+      {#snippet definitions()}
+        <Route path="/">{#snippet element()}<h1>Home</h1>{/snippet}</Route>
+        <Route path="about">{#snippet element()}<h1>About</h1>{/snippet}</Route>
+      {/snippet}
+      <MemoryRouter><Routes>{@render definitions()}</Routes></MemoryRouter>`);
+    expect(screen.getByRole("heading", { name: "Home" })).toBeVisible();
+    await expect.element(screen.getByRole("heading", { name: "About" })).not.toBeInTheDocument();
+  });
 
-  // not applicable to svelte because there's no way for
-  // a parent component to know what Component is being passed as a child
-  // it("throws if some <CustomRoute> is passed as a child of <Routes>", () => {});
-  // it("throws if a regular element (ex: <div>) is passed as a child of <Routes>", () => {});
+  it("allows a Svelte component to register routes (intentional CustomRoute difference)", () => {
+    const CustomRoute = html`<Route path="/">{#snippet element()}<h1>Home</h1>{/snippet}</Route>`;
+    const screen = render(scope(CustomRoute).html`<MemoryRouter><Routes><CustomRoute /></Routes></MemoryRouter>`);
+    expect(screen.getByRole("heading", { name: "Home" })).toBeVisible();
+    expect(consoleError).not.toHaveBeenCalled();
+  });
+
+  it("does not mistake ordinary registration markup for a route (intentional children difference)", () => {
+    const screen = render(html`<MemoryRouter><Routes>
+      <div>Registration markup</div>
+      <Route path="/">{#snippet element()}<h1>Home</h1>{/snippet}</Route>
+    </Routes></MemoryRouter>`);
+    expect(screen.getByText("Registration markup")).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Home" })).toBeVisible();
+    expect(consoleError).not.toHaveBeenCalled();
+  });
 });

@@ -49,8 +49,8 @@
 <script lang="ts">
   let { router, flushSync: reactDomFlushSyncImpl }: RouterProviderProps = $props();
 
-  let _state = $state(router.state);
-  let pendingState = $state<RouterState>();
+  let _state = $state.raw(router.state);
+  let pendingState = $state.raw<RouterState>();
   let vtContext = $state<ViewTransitionContextObject>({ isTransitioning: false });
   let renderDfd = $state<Deferred<void>>();
   let transition = $state<ViewTransition>();

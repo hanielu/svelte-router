@@ -18,5 +18,5 @@
 </script>
 
 <h1>Show</h1>
-<p>Params: {JSON.stringify(params)}</p>
-<p>Data: {data.name}</p>
+<p>Params: {JSON.stringify(params.current)}</p>
+<p>Data: {data.current?.name}</p>

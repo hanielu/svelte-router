@@ -128,9 +128,9 @@
   type HTMLFormSubmitter = HTMLButtonElement | HTMLInputElement;
 
   let submit = useSubmit();
-  let formAction = useFormAction(action, { relative });
-  let formMethod: HTMLFormMethod = method.toLowerCase() === "get" ? "get" : "post";
-  let isAbsolute = typeof action === "string" && ABSOLUTE_URL_REGEX.test(action);
+  const formAction = useFormAction(() => action, () => ({ relative }));
+  const formMethod: HTMLFormMethod = $derived(method.toLowerCase() === "get" ? "get" : "post");
+  const isAbsolute = $derived(typeof action === "string" && ABSOLUTE_URL_REGEX.test(action));
 
   let submitHandler: FormEventHandler<HTMLFormElement> = event => {
     onsubmit && onsubmit(event);
@@ -158,7 +158,7 @@
 <form
   bind:this={ref}
   method={formMethod}
-  action={formAction}
+  action={formAction.current}
   onsubmit={reloadDocument ? onsubmit : submitHandler}
   {...props}
   data-discover={!isAbsolute && discover === "render" ? "true" : undefined}

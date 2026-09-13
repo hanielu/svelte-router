@@ -43,6 +43,12 @@ import {
   getSearchParamsForLocation,
 } from "../dom.js";
 import { useLocation, useNavigate, useResolvedPath, useRouteId } from "$lib/core/hooks.svelte.js";
+import { box } from "$lib/utils/box.svelte.js";
+import {
+  readRouterInput,
+  type RouterInput,
+  type RouterValue,
+} from "../../reactivity.svelte.js";
 import type { HTMLAttributeAnchorTarget } from "svelte/elements";
 import { warning } from "$lib/core/router/history.js";
 
@@ -227,7 +233,7 @@ function deserializeErrors(errors: DataRouter["state"]["errors"]): DataRouter["s
 export type SetURLSearchParams = (
   nextInit?: URLSearchParamsInit | ((prev: URLSearchParams) => URLSearchParamsInit),
   navigateOpts?: NavigateOptions
-) => void;
+) => void | Promise<void>;
 
 /**
  * Submits a HTML `<form>` to the server without reloading the page.
@@ -301,7 +307,7 @@ function getDataRouterConsoleError(hookName: DataRouterHook | DataRouterStateHoo
 function useDataRouterContext(hookName: DataRouterHook) {
   let ctx = DataRouterContext.get();
   invariant(ctx.current, getDataRouterConsoleError(hookName));
-  return ctx.current;
+  return ctx;
 }
 
 function useDataRouterState(hookName: DataRouterStateHook) {
@@ -314,16 +320,16 @@ let fetcherId = 0;
 let getUniqueFetcherId = () => `__${String(++fetcherId)}__`;
 
 export function useSubmit(): SubmitFunction {
-  const router = useDataRouterContext(DataRouterHook.UseSubmit).router;
-  const basename = useDataRouterContext(DataRouterHook.UseSubmit).basename;
+  const context = useDataRouterContext(DataRouterHook.UseSubmit);
   const currentRouteId = useRouteId();
 
   return async (target, options = {}) => {
+    const { router, basename } = context.current!;
     let { action, method, encType, formData, body } = getFormSubmissionInfo(target, basename);
 
     if (options.navigate === false) {
       let key = options.fetcherKey || getUniqueFetcherId();
-      await router.fetch(key, currentRouteId, options.action || action, {
+      await router.fetch(key, currentRouteId.current, options.action || action, {
         preventScrollReset: options.preventScrollReset,
         formData,
         body,
@@ -340,7 +346,7 @@ export function useSubmit(): SubmitFunction {
         formEncType: options.encType || (encType as FormEncType),
         replace: options.replace,
         state: options.state,
-        fromRouteId: currentRouteId,
+        fromRouteId: currentRouteId.current,
         flushSync: options.flushSync,
         viewTransition: options.viewTransition,
       });
@@ -352,72 +358,63 @@ export function useFormAction(
   /**
    * The action to append to the closest route URL.
    */
-  action?: string,
-  { relative }: { relative?: RelativeRoutingType } = {}
-): string {
-  const basename = NavigationContext.current?.basename;
-  const routeContext = RouteContext.current;
-  invariant(routeContext, "useFormAction must be used inside a RouteContext");
+  action: RouterInput<string | undefined> = undefined,
+  options: RouterInput<{ relative?: RelativeRoutingType }> = {}
+): RouterValue<string> {
+  const navigation = NavigationContext.get();
+  const route = RouteContext.get();
+  invariant(route.current.matches.length, "useFormAction must be used inside a matched Route");
+  const resolved = useResolvedPath(() => readRouterInput(action) || ".", options);
+  const location = useLocation();
+  return box.with(() => {
+    const currentAction = readRouterInput(action);
+    const basename = navigation.current.basename;
+    const match = route.current.matches.at(-1);
+    const path = { ...resolved.current };
 
-  let [match] = routeContext.matches.slice(-1);
-  // Shallow clone path so we can modify it below, otherwise we modify the
-  // object referenced by useMemo inside useResolvedPath
-  let path = { ...useResolvedPath(action ? action : ".", { relative }) };
-
-  // If no action was specified, browsers will persist current search params
-  // when determining the path, so match that behavior
-  // https://github.com/remix-run/remix/issues/927
-  let location = useLocation();
-  if (action == null) {
-    // Safe to write to this directly here since if action was undefined, we
-    // would have called useResolvedPath(".") which will never include a search
-    path.search = location.search;
-
-    // When grabbing search params from the URL, remove any included ?index param
-    // since it might not apply to our contextual route.  We add it back based
-    // on match.route.index below
-    let params = new URLSearchParams(path.search);
-    let indexValues = params.getAll("index");
-    let hasNakedIndexParam = indexValues.some(v => v === "");
-    if (hasNakedIndexParam) {
-      params.delete("index");
-      indexValues.filter(v => v).forEach(v => params.append("index", v));
-      let qs = params.toString();
-      path.search = qs ? `?${qs}` : "";
+    // An omitted action preserves search, but only the contextual index route
+    // contributes a naked ?index marker.
+    if (currentAction == null) {
+      path.search = location.current.search;
+      const params = new URLSearchParams(path.search);
+      const indexValues = params.getAll("index");
+      if (indexValues.some(v => v === "")) {
+        params.delete("index");
+        indexValues.filter(v => v).forEach(v => params.append("index", v));
+        const qs = params.toString();
+        path.search = qs ? `?${qs}` : "";
+      }
     }
-  }
-
-  if ((!action || action === ".") && match.route.index) {
-    path.search = path.search ? path.search.replace(/^\?/, "?index&") : "?index";
-  }
-
-  // If we're operating within a basename, prepend it to the pathname prior
-  // to creating the form action.  If this is a root navigation, then just use
-  // the raw basename which allows the basename to have full control over the
-  // presence of a trailing slash on root actions
-  if (basename !== "/") {
-    path.pathname = path.pathname === "/" ? basename : joinPaths([basename, path.pathname]);
-  }
-
-  return createPath(path);
+    if ((!currentAction || currentAction === ".") && match?.route.index) {
+      path.search = path.search ? path.search.replace(/^\?/, "?index&") : "?index";
+    }
+    if (basename !== "/") {
+      path.pathname = path.pathname === "/" ? basename : joinPaths([basename, path.pathname]);
+    }
+    return createPath(path);
+  });
 }
 
 /**
-  Returns a tuple of the current URL's {@link URLSearchParams} and a function to update them. Setting the search params causes a navigation.
+  Returns a tuple of a live {@link URLSearchParams} handle and a navigation setter.
+  Defaults are captured once and do not change the URL. After the first setter
+  call they no longer fill missing keys. Functional updates receive a copy of the
+  latest params; multiple calls before navigation commits are not queued updates.
 
   ```svelte
   <script>
     import { useSearchParams } from "@hvniel/svelte-router";
 
-    const [searchParams, setSearchParams] = $derived(useSearchParams());
+    const [searchParams, setSearchParams] = useSearchParams();
     
-    function handleSubmit() {
+    function handleSubmit(event) {
+      event.preventDefault();
       setSearchParams({ q: "new search" });
     }
   </script>
 
   <form onsubmit={handleSubmit}>
-    <input name="q" value={searchParams.get("q") || ""} />
+    <input name="q" value={searchParams.current.get("q") || ""} />
     <button type="submit">Search</button>
   </form>
   ```
@@ -426,7 +423,7 @@ export function useFormAction(
  */
 export function useSearchParams(
   defaultInit?: URLSearchParamsInit
-): [URLSearchParams, SetURLSearchParams] {
+): [RouterValue<URLSearchParams>, SetURLSearchParams] {
   warning(
     typeof URLSearchParams !== "undefined",
     `You cannot use the \`useSearchParams\` hook in a browser that does not ` +
@@ -435,23 +432,26 @@ export function useSearchParams(
       `https://github.com/ungap/url-search-params.`
   );
 
-  let defaultSearchParams = createSearchParams(defaultInit);
-  let hasSetSearchParams = false;
+  const defaultSearchParams = createSearchParams(defaultInit);
+  let hasSetSearchParams = $state(false);
 
-  let location = useLocation();
-  let searchParams =
+  const location = useLocation();
+  const searchParams = box.with(() =>
     // Only merge in the defaults if we haven't yet called setSearchParams.
     // Once we call that we want those to take precedence, otherwise you can't
     // remove a param with setSearchParams({}) if it has an initial value
-    getSearchParamsForLocation(location.search, hasSetSearchParams ? null : defaultSearchParams);
+    getSearchParamsForLocation(location.current.search, hasSetSearchParams ? null : defaultSearchParams)
+  );
 
   let navigate = useNavigate();
   let setSearchParams: SetURLSearchParams = (nextInit, navigateOptions) => {
     const newSearchParams = createSearchParams(
-      typeof nextInit === "function" ? nextInit(searchParams) : nextInit
+      typeof nextInit === "function"
+        ? nextInit(new URLSearchParams(searchParams.current))
+        : nextInit
     );
     hasSetSearchParams = true;
-    navigate("?" + newSearchParams, navigateOptions);
+    return navigate("?" + newSearchParams, navigateOptions);
   };
 
   return [searchParams, setSearchParams];
@@ -469,32 +469,25 @@ export function useLinkClickHandler<E extends Element = HTMLAnchorElement>(
   props: () => {
     target?: HTMLAttributeAnchorTarget;
     replace?: boolean;
-    state?: any;
+    state?: unknown;
     preventScrollReset?: boolean;
     relative?: RelativeRoutingType;
     viewTransition?: boolean;
   }
 ): (event: MouseEvent) => void {
-  let navigate = useNavigate();
-  let location = $derived(useLocation());
-  const {
-    target,
-    replace: replaceProp,
-    state,
-    preventScrollReset,
-    relative,
-    viewTransition,
-  } = $derived(props());
-  let path = $derived(useResolvedPath(to(), { relative }));
+  const navigate = useNavigate();
+  const location = useLocation();
+  const path = useResolvedPath(to, () => ({ relative: props().relative }));
 
   return (event: MouseEvent) => {
+    const { target, replace: replaceProp, state, preventScrollReset, relative, viewTransition } = props();
     if (shouldProcessLinkClick(event, target)) {
       event.preventDefault();
 
       // If the URL hasn't changed, a regular <a> will do a replace instead of
       // a push, so do the same here unless the replace prop is explicitly set
       let replace =
-        replaceProp !== undefined ? replaceProp : createPath(location) === createPath(path);
+        replaceProp !== undefined ? replaceProp : createPath(location.current) === createPath(path.current);
 
       navigate(to(), {
         replace,
@@ -510,29 +503,29 @@ export function useLinkClickHandler<E extends Element = HTMLAnchorElement>(
 /**
  * Returns whether a data-router view transition is moving to or from `to`.
  *
- * Wrap the call in `$derived(...)` when it must remain live.
+ * Read `.current`; pass getters for changing destinations or relative options.
  *
  * @category Hooks
  */
 export function useViewTransitionState(
-  to: To,
-  opts: { relative?: RelativeRoutingType } = {}
-): boolean {
-  let viewTransitionContext = ViewTransitionContext.get();
-  let { basename } = useDataRouterContext(DataRouterHook.useViewTransitionState);
-  let path = useResolvedPath(to, { relative: opts.relative });
-  let transition = viewTransitionContext.current;
-
-  if (!transition.isTransitioning) return false;
-
-  let currentPath =
-    stripBasename(transition.currentLocation.pathname, basename) ||
-    transition.currentLocation.pathname;
-  let nextPath =
-    stripBasename(transition.nextLocation.pathname, basename) ||
-    transition.nextLocation.pathname;
-
-  return Boolean(matchPath(path.pathname, nextPath) || matchPath(path.pathname, currentPath));
+  to: RouterInput<To>,
+  opts: RouterInput<{ relative?: RelativeRoutingType }> = {}
+): RouterValue<boolean> {
+  const viewTransitionContext = ViewTransitionContext.get();
+  const context = useDataRouterContext(DataRouterHook.useViewTransitionState);
+  const path = useResolvedPath(to, opts);
+  return box.with(() => {
+    const transition = viewTransitionContext.current;
+    if (!transition.isTransitioning) return false;
+    const { basename } = context.current!;
+    const currentPath = stripBasename(transition.currentLocation.pathname, basename)
+      || transition.currentLocation.pathname;
+    const nextPath = stripBasename(transition.nextLocation.pathname, basename)
+      || transition.nextLocation.pathname;
+    return Boolean(
+      matchPath(path.current.pathname, nextPath) || matchPath(path.current.pathname, currentPath)
+    );
+  });
 }
 
 export { default as MemoryRouter } from "./memory-router.svelte";

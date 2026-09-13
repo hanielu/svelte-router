@@ -74,7 +74,7 @@ export function useRoutesImpl(
   const parentPathnameBase = $derived(routeMatch ? routeMatch.pathnameBase : "/");
   const parentRoute = $derived(routeMatch && routeMatch.route);
 
-  const locationFromContext = $derived(useLocation());
+  const locationFromContext = useLocation();
 
   const location = $derived.by(() => {
     if (locationArg) {
@@ -91,7 +91,7 @@ export function useRoutesImpl(
 
       return parsedLocationArg;
     } else {
-      return locationFromContext;
+      return locationFromContext.current;
     }
   });
 
@@ -224,33 +224,22 @@ export function useRoutesImpl(
       props: any;
     } {
       // Determine error/hydrate state similar to _renderMatches
-      let error: any;
       let errorElement: Snippet | null = null;
-      if (dataRouterState && match.route.id) {
-        error = dataRouterState.errors?.[match.route.id];
-      }
-
       if (dataRouterState) {
-        errorElement = match.route.errorElement || (DefaultErrorComponent as Snippet);
+        errorElement = (match.route.ErrorBoundary as Snippet) || match.route.errorElement || (DefaultErrorComponent as Snippet);
       }
 
-      let childrenSnippet: Snippet | null;
-      if (error) {
-        childrenSnippet = errorElement;
-      } else if (match.route.Component) {
-        childrenSnippet = match.route.Component as Snippet;
-      } else if (match.route.element) {
-        childrenSnippet = match.route.element;
-      } else {
-        childrenSnippet = outlet;
-      }
+      // RenderedRoute invokes Components with Svelte's component syntax and
+      // reads the current outlet for an undefined element. Do not capture the
+      // initial outlet or insert a new Outlet context at an implicit layout.
+      const childrenSnippet = match.route.element;
 
       // Wrap in RenderErrorBoundary if needed
       const shouldWrap =
         dataRouterState && (match.route.ErrorBoundary || match.route.errorElement || index === 0);
 
       routeContext.outlet = outlet;
-      routeContext.matches = matchesSlice;
+      routeContext.matches = parentMatches.concat(matchesSlice);
       routeContext.isDataRoute = dataRouterState != null;
 
       // return object include routeContext
@@ -259,6 +248,7 @@ export function useRoutesImpl(
         props: {
           match,
           routeContext,
+          Component: match.route.Component,
           children: childrenSnippet,
         },
       };
@@ -271,6 +261,7 @@ export function useRoutesImpl(
         RenderedRoute(anchor as any, {
           match,
           routeContext,
+          Component: match.route.Component,
           children: childrenSnippet,
         });
       });
@@ -278,9 +269,9 @@ export function useRoutesImpl(
       return {
         component: RenderErrorBoundary,
         props: {
-          location: dataRouterState!.location,
-          revalidation: dataRouterState!.revalidation,
-          error,
+          get location() { return dataRouterState!.location; },
+          get revalidation() { return dataRouterState!.revalidation; },
+          get error() { return dataRouterState!.errors?.[match.route.id!]; },
           component: errorElement!,
           routeContext,
           children: renderedRouteSnippet,
@@ -403,7 +394,7 @@ export function useRoutesImpl(
         const mounted = mountedComponents[level];
         if (!mounted) continue;
         mounted.match = currentMatches[level];
-        mounted.routeContext.matches = currentMatches.slice(0, level + 1);
+        mounted.routeContext.matches = parentMatches.concat(currentMatches.slice(0, level + 1));
       }
 
       if (mountedComponents.length === 0) {
@@ -419,7 +410,7 @@ export function useRoutesImpl(
             mountMatchAtLevel(firstDifferentLevel, anchor, firstDifferentLevel, currentMatches)
           );
           // Keep matches in sync for consumers relying on RouteContext.matches
-          parentComponent.routeContext.matches = currentMatches.slice(0, firstDifferentLevel);
+          parentComponent.routeContext.matches = parentMatches.concat(currentMatches.slice(0, firstDifferentLevel));
         }
       }
     }
@@ -495,7 +486,7 @@ export function _useRoutes(
     );
   }
 
-  const locationFromContext = $derived(useLocation());
+  const locationFromContext = useLocation();
 
   const location = $derived.by(() => {
     if (locationArg) {
@@ -512,7 +503,7 @@ export function _useRoutes(
 
       return parsedLocationArg;
     } else {
-      return locationFromContext;
+      return locationFromContext.current;
     }
   });
 

@@ -7,7 +7,7 @@
   import { Button } from "$ui/button/index.js";
 
   let navigate = useNavigate();
-  let location = $derived(useLocation());
+  const location = useLocation();
 
   let darkMode = $state(false);
   let notifications = $state(true);
@@ -23,7 +23,7 @@
   <div class="bg-muted/50 rounded-lg p-4 space-y-3">
     <p class="text-sm text-muted-foreground">Current location:</p>
     <code class="block bg-background rounded px-3 py-2 text-sm font-mono">
-      {location.pathname}
+      {location.current.pathname}
     </code>
   </div>
 

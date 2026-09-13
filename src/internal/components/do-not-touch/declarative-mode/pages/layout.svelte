@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Outlet, useLocation } from "$lib/index.js";
 
-  const location = $derived(useLocation());
+  const location = useLocation();
 
   console.log("render layout");
 

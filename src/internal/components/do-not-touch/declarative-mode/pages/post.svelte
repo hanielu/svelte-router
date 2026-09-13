@@ -9,7 +9,7 @@
   });
 </script>
 
-<h1>This is the Post {params.postId}</h1>
+<h1>This is the Post {params.current.postId}</h1>
 
 <button onclick={() => navigate("/post/456")}>Post 456</button>
 <button onclick={() => navigate("/")}>Home</button>

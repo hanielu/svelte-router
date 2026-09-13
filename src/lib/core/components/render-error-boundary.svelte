@@ -7,7 +7,7 @@
   type RenderErrorBoundaryProps = {
     location: Location;
     revalidation: RevalidationState;
-    error: any;
+    error: unknown;
     component: Snippet;
     routeContext: RouteContextObject;
     children: Snippet;
@@ -28,7 +28,8 @@
   /* ------------------------------------------------------------------
    * Local reactive state that can change after initialisation
    * ----------------------------------------------------------------*/
-  let error = $state(propError);
+  let renderError = $state.raw<unknown>(undefined);
+  const error = $derived(renderError === undefined ? propError : renderError);
 
   /* ------------------------------------------------------------------
    * Provide contexts just once at component initialisation.  We pass
@@ -52,7 +53,8 @@
     if (resetBoundary && (locationChanged || revalidationFinished)) {
       // Clear error on the boundary itself and in our store
       resetBoundary();
-      error = propError;
+      renderError = undefined;
+      resetBoundary = undefined;
     }
 
     prevLocation = location;
@@ -62,7 +64,7 @@
 
 <svelte:boundary
   onerror={(err, reset) => {
-    error = err;
+    renderError = err;
     resetBoundary = reset;
   }}
 >

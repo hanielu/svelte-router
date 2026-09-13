@@ -27,14 +27,15 @@
   const navigationContext = NavigationContext.get();
   const isStatic = navigationContext.current.static;
   const navigate = useNavigate();
+  const resolvedPath = useResolvedPath(() => to, () => ({ relative }));
   // Resolve again when the destination props change, but not merely because
   // the navigation itself changed the current location. Otherwise a relative
   // <Navigate to="edit"> can chase itself into /edit/edit/... before its old
   // route branch has unmounted.
   const path = $derived.by(() => {
-    const destination = to;
-    const relativeMode = relative;
-    return untrack(() => useResolvedPath(destination, { relative: relativeMode }));
+    to;
+    relative;
+    return untrack(() => resolvedPath.current);
   });
   const serializedPath = $derived(JSON.stringify(path));
 

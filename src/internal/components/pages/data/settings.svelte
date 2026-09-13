@@ -41,16 +41,16 @@
   import Globe from "~icons/lucide/globe";
   import { Button } from "$ui/button/index.js";
 
-  const data = $derived(useLoaderData<typeof loader>());
+  const data = useLoaderData<typeof loader>();
 
   const navigate = useNavigate();
-  const location = $derived(useLocation());
+  const location = useLocation();
 
   // Local state for settings (would normally sync with server)
-  let settings = $derived(data.userSettings);
+  let settings = $derived(data.current?.userSettings);
 </script>
 
-{#if data?.userSettings}
+{#if settings}
   <div in:fly={{ y: 20, duration: 300 }} class="space-y-6">
     <div class="flex items-center gap-3">
       <Settings class="w-6 h-6 text-purple-500" />
@@ -60,7 +60,7 @@
     <div class="bg-muted/50 rounded-lg p-4 space-y-3">
       <p class="text-sm text-muted-foreground">Current location:</p>
       <code class="block bg-background rounded px-3 py-2 text-sm font-mono">
-        {location.pathname}
+        {location.current.pathname}
       </code>
     </div>
 
@@ -181,8 +181,8 @@
 
     <div class="bg-muted/50 rounded-lg p-4 text-sm">
       <p class="text-muted-foreground">
-        Last modified: {new Date(data?.metadata?.lastModified).toLocaleString()}
-        • Version: {data?.metadata?.version}
+        Last modified: {data.current ? new Date(data.current.metadata.lastModified).toLocaleString() : "Loading..."}
+        • Version: {data.current?.metadata?.version}
       </p>
     </div>
 

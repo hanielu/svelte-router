@@ -7,10 +7,10 @@ import { MemoryRouter, Routes, Route, useParams } from "svelte-router";
 
 const Home = html`<h1>Home</h1>`;
 const User = html`<script>
-    let { userId } = useParams();
+    const params = useParams();
   </script>
   <div>
-    <h1>User: {userId}</h1>
+    <h1>User: {params.current.userId}</h1>
   </div>`;
 // sd
 

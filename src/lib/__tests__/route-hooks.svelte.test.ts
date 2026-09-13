@@ -17,12 +17,12 @@ import {
 describe("declarative route hooks", () => {
   it("keeps useMatch and useNavigationType live across same-route navigation", async () => {
     const User = html`<script>
-        const match = $derived(useMatch("/users/:user"));
-        const navigationType = $derived(useNavigationType());
+        const match = useMatch("/users/:user");
+        const navigationType = useNavigationType();
         const navigate = useNavigate();
       </script>
 
-      <p>{match?.params.user}:{navigationType}</p>
+      <p>{match.current?.params.user}:{navigationType.current}</p>
       <button onclick={() => navigate("/users/two")}>Push</button>
       <button onclick={() => navigate("/users/three", { replace: true })}>Replace</button>`;
 
@@ -45,11 +45,11 @@ describe("declarative route hooks", () => {
 
   it("resolves relative navigation against current context in a persistent route", async () => {
     const Project = html`<script>
-        const location = $derived(useLocation());
+        const location = useLocation();
         const navigate = useNavigate();
       </script>
 
-      <p>{location.pathname}</p>
+      <p>{location.current.pathname}</p>
       <button onclick={() => navigate("/projects/two")}>Change project</button>
       <button onclick={() => navigate("details")}>Open details</button>`;
 

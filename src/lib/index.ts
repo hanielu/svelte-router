@@ -3,4 +3,5 @@ export * from "./core/components/index.js";
 export * from "./core/dom/lib/index.svelte.js";
 export * from "./core/dom/server/index.js";
 export * from "./core/hooks.svelte.js";
+export type { RouterValue, RouterInput } from "./core/reactivity.svelte.js";
 export * from "./core/router/utils.js";

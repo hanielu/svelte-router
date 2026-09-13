@@ -3,10 +3,10 @@
   import { fly } from "svelte/transition";
 
   let navigate = useNavigate();
-  let location = $derived(useLocation());
+  const location = useLocation();
 
   $effect(() => {
-    console.log("location", location.pathname);
+    console.log("location", location.current.pathname);
     return () => {
       console.log("unmounting home");
     };

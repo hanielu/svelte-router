@@ -130,8 +130,9 @@
 
     ```svelte
     <script>
+      import { useLocation } from "@hvniel/svelte-router";
       const location = useLocation()
-      location.state; // { some: "value" }
+      $effect(() => console.log(location.current.state)); // { some: "value" }
     </script\>
     ```
 
@@ -258,7 +259,7 @@
   });
 
   // Rendered into <a href> for relative URLs
-  let href = $derived(useHref(to, { relative }));
+  const href = useHref(() => to, () => ({ relative }));
   // let [shouldPrefetch, prefetchRef, prefetchHandlers] = usePrefetchBehavior();
 
   type OnClickEvent = Parameters<NonNullable<HTMLAnchorAttributes["onclick"]>>[0];
@@ -282,7 +283,7 @@
 
   const mergedProps = $derived({
     ...rest,
-    href: absoluteHref || href,
+    href: absoluteHref || href.current,
     onclick: isExternal || reloadDocument ? onclick : handleClick,
     target,
     "data-discover": !isAbsolute && discover === "render" ? "true" : undefined,

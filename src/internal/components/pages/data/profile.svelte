@@ -72,10 +72,10 @@
   import Building from "~icons/lucide/building";
   import { Button } from "$ui/button/index.js";
 
-  const data = $derived(useLoaderData<typeof loader>());
+  const data = useLoaderData<typeof loader>();
 
   const navigate = useNavigate();
-  const location = $derived(useLocation());
+  const location = useLocation();
 </script>
 
 <div in:fly={{ y: 20, duration: 300 }} class="space-y-6">
@@ -87,7 +87,7 @@
   <div class="bg-muted/50 rounded-lg p-4 space-y-3">
     <p class="text-sm text-muted-foreground">Current location:</p>
     <code class="block bg-background rounded px-3 py-2 text-sm font-mono">
-      {location.pathname}
+      {location.current.pathname}
     </code>
   </div>
 
@@ -96,34 +96,34 @@
       <div
         class="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg"
       >
-        {data?.user.name
+        {data.current?.user.name
           .split(" ")
           .map((n: string) => n[0])
           .join("")}
       </div>
       <div>
-        <h2 class="text-xl font-semibold">{data?.user.name}</h2>
-        <p class="text-muted-foreground">@{data?.user.username}</p>
-        <p class="text-sm text-muted-foreground">{data?.user.company}</p>
+        <h2 class="text-xl font-semibold">{data.current?.user.name}</h2>
+        <p class="text-muted-foreground">@{data.current?.user.username}</p>
+        <p class="text-sm text-muted-foreground">{data.current?.user.company}</p>
       </div>
     </div>
 
     <div class="grid grid-cols-2 gap-4 text-sm">
       <div>
         <span class="font-medium text-muted-foreground">Email:</span>
-        <p>{data?.user.email}</p>
+        <p>{data.current?.user.email}</p>
       </div>
       <div>
         <span class="font-medium text-muted-foreground">Phone:</span>
-        <p>{data?.user.phone}</p>
+        <p>{data.current?.user.phone}</p>
       </div>
       <div>
         <span class="font-medium text-muted-foreground">Location:</span>
-        <p>{data?.user.address}</p>
+        <p>{data.current?.user.address}</p>
       </div>
       <div>
         <span class="font-medium text-muted-foreground">Website:</span>
-        <p class="text-blue-600">{data?.user.website}</p>
+        <p class="text-blue-600">{data.current?.user.website}</p>
       </div>
     </div>
   </div>
@@ -136,23 +136,23 @@
 
     <div class="grid grid-cols-3 gap-4 text-center">
       <div class="p-3 bg-muted/50 rounded-lg">
-        <div class="text-2xl font-bold text-blue-600">{data?.activity.projectsCount}</div>
+        <div class="text-2xl font-bold text-blue-600">{data.current?.activity.projectsCount}</div>
         <div class="text-sm text-muted-foreground">Projects</div>
       </div>
       <div class="p-3 bg-muted/50 rounded-lg">
-        <div class="text-2xl font-bold text-green-600">{data?.activity.tasksCompleted}</div>
+        <div class="text-2xl font-bold text-green-600">{data.current?.activity.tasksCompleted}</div>
         <div class="text-sm text-muted-foreground">Tasks</div>
       </div>
       <div class="p-3 bg-muted/50 rounded-lg">
         <div class="text-2xl font-bold text-purple-600">
-          {data?.preferences.notifications ? "On" : "Off"}
+          {data.current?.preferences.notifications ? "On" : "Off"}
         </div>
         <div class="text-sm text-muted-foreground">Notifications</div>
       </div>
     </div>
 
     <div class="text-sm text-muted-foreground">
-      Last login: {new Date(data?.activity.lastLogin).toLocaleString()}
+      Last login: {data.current ? new Date(data.current.activity.lastLogin).toLocaleString() : "Loading..."}
     </div>
   </div>
 

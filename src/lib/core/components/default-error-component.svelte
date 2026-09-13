@@ -3,13 +3,14 @@
   import { useRouteError } from "../hooks.svelte.js";
   import { isRouteErrorResponse } from "../router/utils.js";
 
-  let error = useRouteError();
-  let message = isRouteErrorResponse(error)
+  const routeError = useRouteError();
+  const error = $derived(routeError.current);
+  const message = $derived(isRouteErrorResponse(error)
     ? `${error.status} ${error.statusText}`
     : error instanceof Error
       ? error.message
-      : JSON.stringify(error);
-  let stack = error instanceof Error ? error.stack : null;
+      : JSON.stringify(error));
+  const stack = $derived(error instanceof Error ? error.stack : null);
   let lightgrey = "rgba(200,200,200, 0.5)";
   let preStyles = "padding: 0.5rem; background-color: " + lightgrey;
   let codeStyles = "padding: 2px 4px; background-color: " + lightgrey;

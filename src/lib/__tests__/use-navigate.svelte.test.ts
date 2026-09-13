@@ -1,7 +1,9 @@
 import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
 import { render } from "vitest-browser-svelte";
-import { createClickGetter, html, scope, snippet } from "test-utils";
+import { html, scope, snippet } from "test-utils";
 import type { Snippet } from "svelte";
+import NavigationRouter from "./fixtures/navigation-router.svelte";
+import { navigationCases } from "./fixtures/navigation-cases.js";
 
 // svelte:defs
 import {
@@ -64,11 +66,11 @@ describe("useNavigate", () => {
 
   it("navigates to the new location when no pathname is provided", async () => {
     const Home = html`<script>
-        let location = $derived(useLocation());
+        const location = useLocation();
         let navigate = useNavigate();
       </script>
       <div>
-      	<p>{location.pathname + location.search}</p>
+        <p>{location.current.pathname + location.current.search}</p>
         <button onclick={() => navigate("?key=value")}>click me</button>
       </div> `;
 
@@ -90,11 +92,11 @@ describe("useNavigate", () => {
 
   it("navigates to the new location when no pathname is provided (with a basename)", async () => {
     const Home = html`<script>
-        let location = $derived(useLocation());
+        const location = useLocation();
         let navigate = useNavigate();
       </script>
       <div>
-      	<p>{location.pathname + location.search}</p>
+        <p>{location.current.pathname + location.current.search}</p>
         <button onclick={() => navigate("?key=value")}>click me</button>
       </div> `;
 
@@ -116,11 +118,11 @@ describe("useNavigate", () => {
 
   it("navigates to the new location with empty query string when no query string is provided", async () => {
     const Home = html`<script>
-      let location = $derived(useLocation());
+      const location = useLocation();
       let navigate = useNavigate();
 		</script>
 		<div>
-			<p>{location.pathname + location.search}</p>
+			<p>{location.current.pathname + location.current.search}</p>
 			<button onclick={() => navigate("/home")}>click me</button>
 		</div>
 		`;
@@ -143,53 +145,43 @@ describe("useNavigate", () => {
   });
 
   it("throws on invalid destination path objects", () => {
+    const captureNavigate = vi.fn<(navigate: ReturnType<typeof useNavigate>) => void>();
     const Home = html`<script>
-      let navigate = useNavigate();
+      let { captureNavigate } = $props();
+      const navigate = useNavigate();
+      captureNavigate(navigate);
     </script>
-        <div>
-          <h1>Home</h1>
-          <button onclick={() => navigate({ pathname: "/about/thing?search" })}>click 1</button>
-          <button onclick={() => navigate({ pathname: "/about/thing#hash" })}>click 2</button>
-          <button onclick={() => navigate({ pathname: "/about/thing?search#hash" })}>
-            click 3
-          </button>
-          <button
-            onclick={() =>
-              navigate({
-                pathname: "/about/thing",
-                search: "?search#hash",
-              })
-            }
-          >
-            click 4
-          </button>
-        </div>
-    	`;
+    <h1>Home</h1>`;
 
-    let screen = render(
+    render(
       scope(Home).html`
+        <script>let { captureNavigate } = $props();</script>
         <MemoryRouter initialEntries={["/home"]}>
           <Routes>
-            <Route path="home" element={Home} />
+            <Route path="home">
+              {#snippet element()}<Home {captureNavigate} />{/snippet}
+            </Route>
           </Routes>
         </MemoryRouter>
-      `
+      `,
+      { captureNavigate }
     );
 
-    const getClick = (text: string) => createClickGetter(screen.getByText(text));
+    expect(captureNavigate).toHaveBeenCalledOnce();
+    const navigate = captureNavigate.mock.calls[0][0];
 
-    expect(getClick("click 1")).toThrowErrorMatchingInlineSnapshot(
+    expect(() => navigate({ pathname: "/about/thing?search" })).toThrowErrorMatchingInlineSnapshot(
       `[Error: Cannot include a '?' character in a manually specified \`to.pathname\` field [{"pathname":"/about/thing?search"}].  Please separate it out to the \`to.search\` field. Alternatively you may provide the full path as a string in <Link to="..."> and the router will parse it for you.]`
     );
-    expect(getClick("click 2")).toThrowErrorMatchingInlineSnapshot(
+    expect(() => navigate({ pathname: "/about/thing#hash" })).toThrowErrorMatchingInlineSnapshot(
       `[Error: Cannot include a '#' character in a manually specified \`to.pathname\` field [{"pathname":"/about/thing#hash"}].  Please separate it out to the \`to.hash\` field. Alternatively you may provide the full path as a string in <Link to="..."> and the router will parse it for you.]`
     );
 
-    expect(getClick("click 3")).toThrowErrorMatchingInlineSnapshot(
+    expect(() => navigate({ pathname: "/about/thing?search#hash" })).toThrowErrorMatchingInlineSnapshot(
       `[Error: Cannot include a '?' character in a manually specified \`to.pathname\` field [{"pathname":"/about/thing?search#hash"}].  Please separate it out to the \`to.search\` field. Alternatively you may provide the full path as a string in <Link to="..."> and the router will parse it for you.]`
     );
 
-    expect(getClick("click 4")).toThrowErrorMatchingInlineSnapshot(
+    expect(() => navigate({ pathname: "/about/thing", search: "?search#hash" })).toThrowErrorMatchingInlineSnapshot(
       `[Error: Cannot include a '#' character in a manually specified \`to.search\` field [{"pathname":"/about/thing","search":"?search#hash"}].  Please separate it out to the \`to.hash\` field. Alternatively you may provide the full path as a string in <Link to="..."> and the router will parse it for you.]`
     );
   });
@@ -217,9 +209,9 @@ describe("useNavigate", () => {
 
           const Component = scope(Home, Page).html`<script>
 					let navigate = useNavigate();
-					let location = $derived(useLocation());
+					const location = useLocation();
 					</script>
-					<button onclick={() => navigate(location.pathname === "/" ? "/page" : "/")}>
+					<button onclick={() => navigate(location.current.pathname === "/" ? "/page" : "/")}>
 						Navigate from RouterProvider
 					</button>
 					<Routes>
@@ -501,7 +493,8 @@ describe("useNavigate", () => {
             <button onclick="{handleClick}">click me</button>
           </div>`;
 
-        const ShowLocationState = html`<p>location.state:{JSON.stringify(useLocation().state)}</p>`;
+        const ShowLocationState = html`<script>const location = useLocation();</script>
+          <p>location.state:{JSON.stringify(location.current.state)}</p>`;
 
         const screen = render(
           scope(Home, ShowLocationState).html`
@@ -520,7 +513,7 @@ describe("useNavigate", () => {
     });
   });
 
-  describe("when relative navigation is handled via React Context", () => {
+  describe("when relative navigation is handled via Svelte context", () => {
     describe("with an absolute href", () => {
       it("navigates to the correct URL", async () => {
         const Home = html`<script>
@@ -546,5 +539,74 @@ describe("useNavigate", () => {
         await expect.element(screen.getByRole("heading", { name: "About" })).toBeVisible();
       });
     });
+  });
+});
+
+describe.each(["declarative", "data"] as const)("upstream useNavigate: %s", mode => {
+  it.each(navigationCases)("$name", async scenario => {
+    const screen = render(NavigationRouter, {
+      mode, initial: scenario.initial, routes: scenario.routes, options: scenario,
+    });
+    await screen.getByRole("button", { name: "Navigate", exact: true }).click();
+    await expect.element(screen.getByRole("heading", { name: scenario.heading ?? "Destination", exact: true })).toBeVisible();
+    await expect.poll(() => screen.getByTestId("destination-location").element().textContent).toBe(scenario.expected);
+    await expect.element(screen.getByRole("heading", { name: "Source" })).not.toBeInTheDocument();
+  });
+
+  it("retains one command across location changes and resolves from the latest match", async () => {
+    const capture = vi.fn();
+    const Page = html`<script>
+      let { capture } = $props();
+      const navigate = useNavigate();
+      const location = useLocation();
+      capture(navigate, location);
+      let count = $state(0);
+    </script>
+    <button onclick={() => count++}>Increment</button>
+    <p>count:{count}</p>
+    <p>{location.current.pathname}</p>`;
+    const App = scope(Page).html`<script>
+      let { mode, capture } = $props();
+      const router = mode === "data" ? createMemoryRouter([
+        { path: "projects/:id/*", element: page }
+      ], { initialEntries: ["/projects/one"] }) : undefined;
+      $effect(() => () => router?.dispose());
+    </script>
+    {#snippet page()}<Page {capture} />{/snippet}
+    {#if router}<RouterProvider {router} />{:else}
+      <MemoryRouter initialEntries={["/projects/one"]}>
+        <Routes><Route path="projects/:id/*" element={page} /></Routes>
+      </MemoryRouter>
+    {/if}`;
+    const screen = render(App, { mode, capture });
+    await screen.getByRole("button", { name: "Increment" }).click();
+    const [navigate, location] = capture.mock.calls[0];
+    await navigate("/projects/two");
+    await expect.element(screen.getByText("/projects/two", { exact: true })).toBeVisible();
+    await navigate("details");
+    await expect.element(screen.getByText("/projects/two/details", { exact: true })).toBeVisible();
+    await navigate(-1);
+    await expect.element(screen.getByText("/projects/two", { exact: true })).toBeVisible();
+    expect(location.current.pathname).toBe("/projects/two");
+    expect(capture).toHaveBeenCalledOnce();
+    await expect.element(screen.getByText("count:1")).toBeVisible();
+  });
+
+  it.each([false, true])("basename, descendant Routes=%s", async descendant => {
+    const Home = html`<script>const navigate = useNavigate();</script>
+      <button onclick={() => navigate("/path")}>Go</button>`;
+    const Descendant = scope(Home).html`<Routes><Route index Component={Home} /></Routes>`;
+    const Destination = html`<script>const location = useLocation();</script>
+      <h1>Path</h1><p>{location.current.pathname}</p>`;
+    const screen = render(NavigationRouter, {
+      mode, initial: "/base", basename: "/base", options: { to: "/path" },
+      routes: [
+        { path: descendant ? "/*" : "/", Component: descendant ? Descendant : Home },
+        { path: "/path", Component: Destination },
+      ],
+    });
+    await screen.getByRole("button", { name: "Go" }).click();
+    await expect.element(screen.getByRole("heading", { name: "Path" })).toBeVisible();
+    await expect.element(screen.getByText("/path", { exact: true })).toBeVisible();
   });
 });

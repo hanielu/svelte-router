@@ -26,9 +26,9 @@
   import TrendingUp from "~icons/lucide/trending-up";
   import { Button } from "$ui/button/index.js";
 
-  const data = $derived(useLoaderData<typeof loader>());
+  const data = useLoaderData<typeof loader>();
   const navigate = useNavigate();
-  const location = $derived(useLocation());
+  const location = useLocation();
 </script>
 
 <div in:fly={{ y: 20, duration: 300 }} class="space-y-6">
@@ -40,7 +40,7 @@
   <div class="bg-muted/50 rounded-lg p-4 space-y-3">
     <p class="text-sm text-muted-foreground">Current location:</p>
     <code class="block bg-background rounded px-3 py-2 text-sm font-mono">
-      {location.pathname}
+      {location.current.pathname}
     </code>
   </div>
 
@@ -52,23 +52,23 @@
 
     <div class="grid grid-cols-3 gap-4 text-sm">
       <div class="text-center p-3 bg-muted/50 rounded-lg">
-        <div class="text-2xl font-bold text-blue-600">{data?.stats.visitors}</div>
+        <div class="text-2xl font-bold text-blue-600">{data.current?.stats.visitors}</div>
         <div class="text-muted-foreground">Visitors</div>
       </div>
       <div class="text-center p-3 bg-muted/50 rounded-lg">
-        <div class="text-2xl font-bold text-green-600">{data?.stats.pages}</div>
+        <div class="text-2xl font-bold text-green-600">{data.current?.stats.pages}</div>
         <div class="text-muted-foreground">Pages</div>
       </div>
       <div class="text-center p-3 bg-muted/50 rounded-lg">
-        <div class="text-2xl font-bold text-purple-600 capitalize">{data?.stats.status}</div>
+        <div class="text-2xl font-bold text-purple-600 capitalize">{data.current?.stats.status}</div>
         <div class="text-muted-foreground">Status</div>
       </div>
     </div>
 
     <div class="text-sm">
-      <p class="mb-2">{data?.message}</p>
+      <p class="mb-2">{data.current?.message}</p>
       <p class="text-muted-foreground">
-        Last updated: {new Date(data?.timestamp).toLocaleTimeString()}
+        Last updated: {data.current ? new Date(data.current.timestamp).toLocaleTimeString() : "Loading..."}
       </p>
     </div>
   </div>
