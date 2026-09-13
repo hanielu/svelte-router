@@ -168,4 +168,4 @@ export { default as RouterProvider } from "./router-provider.svelte";
 export type { RouteProps } from "./route.svelte";
 export type { NavigateProps } from "./navigate.svelte";
 export type { RoutesProps } from "./routes.svelte";
-export { useRoutes } from "./use-routes.svelte";
+export { useRoutes } from "./use-routes.svelte.js";

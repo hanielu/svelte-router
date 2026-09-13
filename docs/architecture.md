@@ -32,10 +32,11 @@ only the structural `RouterValue<T>` type. Writable boxes remain for owned mutab
 values and element refs, not copies of engine state. See the
 [context caching audit](svelte-reactivity.md#shared-projection-and-context-audit).
 
-The existing renderer contains manually invoked components, casts, and a retained
-alternate rendering implementation. Treat these as implementation debt. New feature
-components must not copy compiler calling conventions or create another renderer.
-A renderer simplification needs equivalent lifecycle evidence first.
+The renderer uses one Snippet-to-component bridge in `useRoutesImpl`, followed by
+ordinary compiled `RouteRenderer`/keyed `RouteBranch` components. The alternate
+renderer and independent imperative mount roots were removed: those roots severed
+ancestor Svelte error boundaries. The bridge remains compiler-coupled debt; new
+features must not copy it or add another renderer.
 
 The active renderer invokes a route's `Component` with Svelte component syntax in
 `RenderedRoute`, not as a zero-argument snippet. Element snippets stay snippets.
@@ -139,9 +140,9 @@ IDs must have an unambiguous owner and meaning across normalization, registratio
 matching, data lookup, and rendering. Do not fix an ID collision by making a view
 silently read another route's loader result.
 
-Imperative mounting must preserve the correct ancestor contexts. Every mounted
-root must be unmounted through its owner; changing an outlet must also release the
-old branch. Test nested providers and sibling routers to expose context leakage.
+Native branch nesting preserves ancestor contexts and error boundaries. Key by
+route identity, not location. Test nested providers and sibling routers to expose
+context leakage, and retain parent/leaf cleanup and mixed-descendant error tests.
 
 ## Navigation and browser semantics
 
@@ -177,9 +178,10 @@ commands rather than assignment to a reader.
 `DataRoutes` passes a state getter into its renderer. Retained error-boundary
 props read the current engine snapshot; render exceptions have separate locally
 owned state. Do not capture the initial loader error or copy changing error props
-into an effect-driven state mirror. The error-value tests cover loader failures
-changing in a retained error view and recovery; they do not qualify every nested
-action/render-error boundary case.
+into an effect-driven state mirror. The error-value and `errors-lazy` tests cover
+retained errors, nearest boundaries, action/loader/Response/null failures, initial
+fallbacks, render recovery, error UI bubbling, and mixed declarative descendants.
+They do not constitute the complete upstream hydration/static/lazy-engine matrix.
 
 Thrown responses, rejected loaders/actions, render exceptions, and consumer
 validation results are distinct cases. Boundary placement and reset-on-navigation
@@ -188,3 +190,9 @@ event-handler or asynchronous failures.
 
 Unsupported fetcher, lazy, error, and static behaviour remains marked in the
 parity plan. Copied engine code is a place to investigate, not a support claim.
+
+Fetcher handles register/release keys with the engine; the provider owns retained
+data after idle fetchers leave the active engine map. Do not add another request
+cache. Scroll restoration similarly registers with the engine's save/restore
+lifecycle; readiness and the active element come from the application. See
+[client data](client-data.md) for the exact public/lifetime contracts.

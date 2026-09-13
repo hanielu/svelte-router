@@ -1289,7 +1289,11 @@ export function createRouter(init: RouterInit): Router {
         initialized: true,
         navigation: IDLE_NAVIGATION,
         revalidation: "idle",
-        restoreScrollPosition: getSavedScrollPosition(location, newState.matches || state.matches),
+        // Revalidation refreshes data at the same location, not the viewport.
+        // Matches upstream completeNavigation's uninterrupted-revalidation guard.
+        restoreScrollPosition: isUninterruptedRevalidation
+          ? false
+          : getSavedScrollPosition(location, newState.matches || state.matches),
         preventScrollReset,
         blockers,
       },

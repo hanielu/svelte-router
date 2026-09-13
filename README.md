@@ -119,8 +119,14 @@ application owns its data fetching. See [router architecture](docs/architecture.
 - **Data Loading**: Built-in loader and action functions for data fetching
 - **Nested Routing**: Nested routes and layouts through `Outlet`
 - **Native HTML**: Links and forms enhance ordinary elements; a client-only app still requires JavaScript
-- **TypeScript**: Typed APIs, with outstanding package/type conformance work tracked in the parity plan
+- **TypeScript**: Public route/data/controller types checked against the emitted package with `skipLibCheck: false`
 - **Svelte 5**: Components, snippets, runes, and live readonly `.current` value handles
+- **Non-navigation operations**: Keyed fetchers with engine-owned cancellation and revalidation
+- **Scroll restoration**: Window or one active element, with an application-content readiness gate
+
+See [client data, error recovery, and scroll](docs/client-data.md) for the new
+fetcher and scroll APIs, working examples, and their limits. These additions and
+the `.current` change are on this branch, not published in `0.0.6`.
 
 ## Examples
 
@@ -319,6 +325,7 @@ support and limitations. Client-side route protection is not server authorizatio
 | ---------------- | --------------------------------------------- |
 | `RouterProvider` | Provides router context for data routing mode |
 | `Outlet`         | Renders child route components                |
+| `ScrollRestoration` | Restores window/element scroll in a data-router layout |
 
 ### Declarative Routing Components
 
@@ -367,9 +374,11 @@ support and limitations. Client-side route protection is not server authorizatio
 | `useNavigation()`    | Returns navigation state information                  |
 | `useSubmit()`        | Returns a function to submit forms programmatically   |
 | `useRevalidator()`   | Returns a `revalidate()` command and live readonly `state` |
+| `useFetcher<T>()`    | Stable `.current`, `key`, `load` and `submit` controller |
+| `useFetchers()`      | Readonly handle listing active keyed operations |
+| `useScrollRestoration(options?)` | Mount-owned scroll lifecycle; no return value |
 
-`useFetcher`/`useFetchers` are planned, not current exports. Value readers such as
-`useNavigation` and `useLoaderData` return readonly `.current` handles. Loader and
+Value readers such as `useNavigation` and `useLoaderData` return readonly `.current` handles. Loader and
 action data may be `undefined` before it exists. `useSubmit` remains a command.
 
 ### Route Definition Types
@@ -379,9 +388,10 @@ action data may be `undefined` before it exists. `useSubmit` remains a command.
 | `LoaderFunction` | Type for route loader functions             |
 | `ActionFunction` | Type for route action functions             |
 
-The Svelte-specific `RouteObject` type exists internally but is not currently
-re-exported from the package root. `ErrorBoundary` is a route property accepting a
-Svelte component, not an exported interface. Do not import either as a public type.
+`RouteObject`, `DataRouteObject`, `NavigateOptions`, `SerializeFrom`,
+`FetcherController`, and scroll option/prop types are public. `SerializeFrom`
+describes client results, not generated framework types or server serialization.
+`ErrorBoundary` is a route property accepting a Svelte component, not an exported interface.
 
 ## Contributing
 

@@ -52,7 +52,7 @@ contributed by plugins.
 
 | Capability | Status | Why it matters / remaining work |
 | --- | --- | --- |
-| `Link` | 🟡 | Implemented and used, but needs a focused click/modifier/target/basename matrix. |
+| `Link` | ✅ | Pinned href/click/push/custom-handler matrices, both routing modes, real browser/hash hrefs, live inputs, downloads and keyboard activation. |
 | `NavLink` | ✅ | Full pinned active/pending suite: `end`, casing, basename, browser encoding, `aria-current`, callback class/style and Svelte snippets. View-transition qualification is separate in P1. |
 | `Navigate` | ✅ | Declarative redirects, state/replace, and relative data-route redirects are tested. |
 | Live `useNavigate` | ✅ | Persistent layouts now resolve relative navigation from current matches/location instead of mount-time snapshots. |
@@ -67,10 +67,10 @@ contributed by plugins.
 | `useNavigation` | ✅ | Live `.current` handle; loading/submitting/idle transitions and form data covered in `data-value-handles.svelte.test.ts`. Fetcher metadata remains separate. |
 | `useBlocker` | ✅ | Svelte getter callbacks, blocked/reset/proceed states, basename handling, and cleanup are implemented. |
 | `useSearchParams` | 🟡 | Full pinned search-params suite plus two-mode liveness/Back tests. Blocked functional-update mutation is covered; broader concurrent/defaults interactions remain. |
-| Error boundaries and `useRouteError` | 🟡 | Rendering machinery exists; add loader/action/render-error and reset-on-navigation tests before relying on it. |
-| Lazy routes | 🟡 | Router support exists, but component loading, errors, and navigation races are unverified. |
+| Error boundaries and `useRouteError` | 🟡 | Native Svelte boundaries now preserve mixed declarative descendants. Loader/action/Response/null, hydration owner, 404, render-error, error UI bubbling and recovery tested; full data/static suites remain. |
+| Lazy routes | 🟡 | Initial/nested fallback, module+loader, rejected import, lazy ErrorBoundary, abandoned navigation and module reuse tested. Full lazy-engine/property/SSR matrix remains. Revalidation does not retry a cached rejected import. |
 | Plugin route lifecycle | ⬜ | Declarative `<Route>` registration appends to plain arrays and has no unmount/replacement cleanup. This blocks runtime plugin enable/disable. |
-| `useFetcher` / `useFetchers` | ⬜ | Critical for autosave, inline mutations, search panels, and submissions that must not navigate. |
+| `useFetcher` / `useFetchers` | 🟡 | Public live `.current` controllers, commands and active snapshots; browser/hash DOM tests cover loading, submission, keys, errors, serialization, revalidation and persistence. Full engine race suite remains. Does not replace a domain form/autosave controller. |
 
 P0 is complete when every row is ✅, including plugin route teardown. Until then,
 consumers should keep each mounted declarative definition tree static. Whole-tree
@@ -81,14 +81,14 @@ architecture guide. The `.current` migration does not implement route teardown.
 
 | Capability | Status | Notes |
 | --- | --- | --- |
-| `ScrollRestoration` | ⬜ | Restore per-location scroll and support custom keys. |
+| `ScrollRestoration` | ✅ | Client vertical window/element restoration, keys, storage, hashes, reset policy and app-owned readiness. Full pinned scroll-engine suite and client DOM cases; SSR scripts are not supplied. |
 | `useBeforeUnload` | ⬜ | Complements `useBlocker` for tab close/reload protection. |
 | `unstable_usePrompt` | ⬜ | Convenience API over blocker + browser confirm; preserve its upstream caveats. |
 | `Await`, `useAsyncValue`, `useAsyncError` | ⬜ | Needed if consumers adopt streamed/deferred route data. |
 | `useViewTransitionState` | 🟡 | Implemented but needs mocked View Transition API tests and interruption coverage. |
 | `useRevalidator` | 🟡 | Full pinned hook suite: data/state transitions, identity, and child/parent error recovery. Overlapping engine revalidation remains unqualified. |
 | `useSubmit`, `useFormAction` | 🟡 | Implemented; test index routes, encodings, JSON/text bodies, basename, and `navigate: false`. |
-| Fetcher persistence and cleanup | ⬜ | Stable keys, concurrent fetchers, aborted requests, reset, unmount, and retained data. |
+| Fetcher persistence and cleanup | 🟡 | Key sharing/change, retained data, active lifetime, unmounted/remounted errors, superseded redirects/loads and revalidation tested in both history modes. Wider engine cancellation/race matrix remains. |
 | Prefetch/discovery behaviour | 🟡 | Types and pieces exist; verify `render`, `intent`, viewport, and `none`. |
 | View transitions on `Link`/`NavLink` | 🟡 | Plumbing exists; verify interrupted and back-to-back transitions. |
 | Hydration | 🟡 | Data-router fields exist; add server-to-client tests before claiming support. |
@@ -104,7 +104,7 @@ architecture guide. The `.current` migration does not implement route teardown.
 | `unstable_HistoryRouter` | ⬜ | Low priority; custom history users can use the low-level router once exported. |
 | `createRoutesStub` equivalent | ⬜ | A Svelte testing helper would materially improve loader/action/error tests. |
 | Static handler/router SSR | 🟡 | `StaticRouter`, `StaticRouterProvider`, and `createStaticRouter` exist, but the provider contains an unresolved TODO and `createStaticHandler` is not publicly exported. |
-| Package/type conformance | 🟡 | `svelte-check` currently exposes copied React/framework type-layer failures and extension-resolution errors. |
+| Package/type conformance | ✅ | Unused framework type machinery removed; source and emitted consumer types pass with strict library checking. Public route/controller types and ESM export paths verified. |
 | Dev warnings and invariant parity | 🟡 | Core warnings exist; audit wording and failure timing after behaviour parity. |
 
 ## API inventory
@@ -123,11 +123,11 @@ architecture guide. The `.current` migration does not implement route teardown.
 | `Route` | ✅ | `Component` accepts a Svelte component; `element` is a Svelte snippet. |
 | `Outlet` | ✅ | `context` is exposed through Svelte context. |
 | `Navigate` | ✅ | No rendered DOM; navigates from an effect after setup. |
-| `Link` | 🟡 | Svelte children/child snippets replace React nodes/render props. |
+| `Link` | ✅ | Svelte children/child snippets replace React nodes/render props; native click and href matrices audited. |
 | `NavLink` | ✅ | Callback `class`/`style` and a state-bearing children snippet replace React render props. |
 | `Form` | ✅ | Enhanced Svelte form, validated through a route action. |
 | `Await` | ⬜ | Requires Svelte boundary/snippet design rather than a literal Suspense port. |
-| `ScrollRestoration` | ⬜ | Not implemented. |
+| `ScrollRestoration` | ✅ | One active window/element; optional current-content readiness gate. Client-only, no SSR script. |
 | `StaticRouterProvider` | 🟡 | Exported but not production-ready. |
 
 ### Route and navigation hooks
@@ -155,12 +155,12 @@ architecture guide. The `.current` migration does not implement route teardown.
 | `useMatches` | ✅ | — |
 | `useNavigation` | ✅ | Add complete submission metadata assertions. |
 | `useRouteLoaderData` | ✅ | — |
-| `useRouteError` | 🟡 | Error-boundary matrix. |
+| `useRouteError` | 🟡 | Core nested data/render/reset matrix covered; broader SSR/hydration qualification remains. |
 | `useRouteId` | ✅ | Live ID handle; nearest route, missing ID, and public type covered by the handle tests. |
 | `useRevalidator` | 🟡 | Live state tested; add overlapping revalidation coverage. |
 | `useBlocker` | ✅ | Prefer `useBlocker(() => dirty)` so the router reads current rune state. |
-| `useFetcher` | ⬜ | Design `fetcher.Form` as a Svelte component/snippet-friendly property. |
-| `useFetchers` | ⬜ | Must return live snapshots without leaking mutable router maps. |
+| `useFetcher` | 🟡 | Stable `.current`/`key`/`load`/`submit`; use ordinary `<Form navigate={false} fetcherKey={fetcher.key}>`, not a component factory. |
+| `useFetchers` | 🟡 | Cached live active snapshots without exposing mutable engine maps. DOM matrix covered; complete engine qualification remains. |
 | `useAsyncValue` | ⬜ | Depends on `Await`. |
 | `useAsyncError` | ⬜ | Depends on `Await`. |
 
@@ -171,7 +171,8 @@ architecture guide. The `.current` migration does not implement route teardown.
 | `useSearchParams` | 🟡 | Live tuple handle implemented; persistence/defaults/functional updates tested. Broader navigation matrix remains. |
 | `useSubmit` | 🟡 | Broad submission matrix. |
 | `useFormAction` | 🟡 | Index-route and basename matrix. |
-| `useLinkClickHandler` | 🟡 | Link-level browser tests. |
+| `useLinkClickHandler` | ✅ | Pinned custom-anchor click suite plus native-event matrix. |
+| `useScrollRestoration` | ✅ | Hook alternative to the component; mount-owned engine/browser lifecycle. |
 | `useViewTransitionState` | 🟡 | Browser API mock, basename, and changing target covered; interruption matrix remains. |
 | `useBeforeUnload` | ⬜ | Add/remove listener lifecycle tests. |
 | `unstable_usePrompt` | ⬜ | Build after blocker/before-unload behaviour is firm. |
@@ -267,29 +268,29 @@ For each implemented upstream feature:
 7. Prefer accessible assertions (`role`, name, `aria-current`) over implementation details.
 8. A parity row becomes ✅ only after the focused test and the complete suite pass.
 
-Current test infrastructure also needs cleanup: the SvelteKit documentation site is
-loaded during browser tests and its Shiki setup emits large unrelated errors. Split
-library tests into a minimal Vite/Vitest project so router failures stay visible and
-fast.
+Library tests now use a minimal Svelte Vite configuration rather than starting
+the SvelteKit documentation/SSR/Shiki pipeline. Production site builds remain
+separate evidence. Read [the test audit](docs/test-parity.md), not test counts,
+to distinguish covered counterparts from unported engine cases.
 
 ## Recommended build order
 
-The branch implements the agent/documentation foundation, Svelte baseline, and
-Svelte-native reactive-hook redesign. That work does not complete unrelated parity
-rows. The wider capability backlog remains:
+The branch implements the foundation, live hooks, package/type cleanup, Link
+matrix, client scroll restoration, native error/lazy rendering, and fetcher DOM
+adapter. [Client data](docs/client-data.md) records the supported shape and limits;
+[Ridu adoption](docs/ridu-adoption.md) separates library work from consumer migration.
+The wider backlog remains:
 
 1. Finish P0 route lifecycle: replace append-only route arrays with keyed registration
    and cleanup, then test plugin enable/disable and route prop changes.
-2. Complete Link/Form/search-parameter/relative-path matrices beyond the handle tests.
-3. Implement `useFetcher` and `useFetchers`, including a Svelte `fetcher.Form`, aborts,
-   concurrency, stable keys, cleanup, and autosave examples.
-4. Complete error boundaries and lazy routes, including thrown responses and reset
-   behaviour.
-5. Implement `useBeforeUnload`, prompt, and ScrollRestoration.
+2. Complete the full Form/search/encoding matrices beyond the audited cases.
+3. Port the remaining fetcher-engine races, cancellations and revalidation cases.
+4. Complete lazy-property, hydration, static and broader data-router error matrices.
+5. Implement `useBeforeUnload` and prompt; preserve their distinct browser caveats.
 6. Implement `Await` with Svelte boundaries/snippets, then async value/error hooks.
 7. Finish view transitions, hydration, static routing, and testing helpers.
-8. Resolve package/type-check failures, run `publint`, measure bundle size, and only
-   then describe the package as React Router-compatible rather than a work in progress.
+8. Repeat package/type/publint/build verification for release; measure bundle size
+   before making size/performance claims. The package remains a partial port.
 
 ## Deliberate non-goals
 

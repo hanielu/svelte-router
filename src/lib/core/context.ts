@@ -115,8 +115,7 @@ export const ViewTransitionContext = Context.boxed<ViewTransitionContextObject>(
   { isTransitioning: false }
 );
 
-// TODO: (v7) Change the useFetcher data from `any` to `unknown`
-export type FetchersContextObject = SvelteMap<string, any>;
+export type FetchersContextObject = SvelteMap<string, unknown>;
 
 export const FetchersContext = new Context<FetchersContextObject>(
   "FetchersContext",

@@ -1,5 +1,5 @@
 import { isFunction, isObject } from "./is.js";
-import type { Getter } from "./types.js";
+import type { Expand, Getter } from "./types.js";
 
 export type MaybeBoxOrGetter<T> = T | Getter<T> | ReadableBox<T>;
 

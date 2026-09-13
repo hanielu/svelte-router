@@ -1,23 +1,85 @@
 import {
-  useLocation, useParams, useMatch, useResolvedPath, useHref, useNavigationType,
-  useNavigation, useMatches, useLoaderData, useRouteLoaderData, useActionData,
-  useRouteError, useRouteId, useOutletContext, useSearchParams, useFormAction,
-  useViewTransitionState, useNavigate, useRevalidator, useInRouterContext,
+  useLocation,
+  useParams,
+  useMatch,
+  useResolvedPath,
+  useHref,
+  useNavigationType,
+  useNavigation,
+  useMatches,
+  useLoaderData,
+  useRouteLoaderData,
+  useActionData,
+  useRouteError,
+  useRouteId,
+  useOutletContext,
+  useSearchParams,
+  useFormAction,
+  useViewTransitionState,
+  useNavigate,
+  useRevalidator,
+  useInRouterContext,
   type RouterValue,
+  type RouteObject,
+  type SerializeFrom,
+  data,
+  useFetcher,
+  useFetchers,
+  useScrollRestoration,
 } from "@hvniel/svelte-router";
 
-type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends
-  (<T>() => T extends B ? 1 : 2) ? true : false;
+type Equal<A, B> =
+  (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2
+    ? true
+    : false;
 type Assert<T extends true> = T;
+
+const wrapped = () => data({ date: new Date(), callback: (): boolean => true });
+type ClientPayload = Assert<
+  Equal<SerializeFrom<typeof wrapped>, { date: Date; callback: () => boolean }>
+>;
+type AsyncPayload = Assert<
+  Equal<SerializeFrom<() => Promise<Date | Response>>, Date>
+>;
+type VoidPayload = Assert<Equal<SerializeFrom<() => void>, undefined>>;
+type UnknownPayload = Assert<Equal<SerializeFrom<any>, unknown>>;
+const routes: RouteObject[] = [{ path: "/", loader: wrapped }];
 
 // Isolated compile-only consumer of the emitted package, not the source/SvelteKit project.
 // Hooks must run in real component initialization at runtime.
 function consumer() {
+  const fetcher = useFetcher<typeof wrapped>(() => ({ key: "item" }));
+  const fetchers = useFetchers();
+  type FetcherData = Assert<
+    Equal<
+      typeof fetcher.current.data,
+      { date: Date; callback: () => boolean } | undefined
+    >
+  >;
+  const key: string = fetcher.key;
+  const loading: Promise<void> = fetcher.load("/item");
+  const submitting: Promise<void> = fetcher.submit(
+    { title: "New" },
+    { method: "post", encType: "application/json" }
+  );
+  const activeKey: string | undefined = fetchers.current[0]?.key;
+  useScrollRestoration({
+    target: () => document.querySelector("main"),
+    ready: () => true,
+    getKey: (location, matches) => location.pathname + matches.length,
+  });
+  // @ts-expect-error Fetcher snapshots cannot be replaced by consumers.
+  fetcher.current = fetcher.current;
+  // @ts-expect-error Fetcher keys change only via the input, not the controller.
+  fetcher.key = "changed";
   const location = useLocation();
   const params = useParams<"id">();
   const recordParams = useParams<{ id: string; page?: string }>();
   const match = useMatch(() => "/posts/:id" as const);
-  const path = useResolvedPath(() => "..", () => ({ relative: "path" }));
+  const path = useResolvedPath(
+    () => "..",
+    () => ({ relative: "path" })
+  );
   const href = useHref(() => "/posts");
   const data = useLoaderData<() => Promise<{ title: string }>>();
   const optionalData = useRouteLoaderData<{ title: string }>(() => "post");
@@ -29,21 +91,43 @@ function consumer() {
   const error = useRouteError();
   const id = useRouteId();
   const outlet = useOutletContext<{ title: string }>();
-  const formAction = useFormAction(() => undefined, () => ({ relative: "route" }));
+  const formAction = useFormAction(
+    () => undefined,
+    () => ({ relative: "route" })
+  );
   const transitioning = useViewTransitionState(() => "/posts");
 
-  type Params = Assert<Equal<typeof params.current, Readonly<{ readonly id: string | undefined }>>>;
-  type RecordParams = Assert<Equal<typeof recordParams.current, Readonly<Partial<{ id: string; page?: string }>>>>;
+  type Params = Assert<
+    Equal<typeof params.current, Readonly<{ readonly id: string | undefined }>>
+  >;
+  type RecordParams = Assert<
+    Equal<
+      typeof recordParams.current,
+      Readonly<Partial<{ id: string; page?: string }>>
+    >
+  >;
   type Data = Assert<Equal<typeof data.current, { title: string } | undefined>>;
-  type OptionalData = Assert<Equal<typeof optionalData.current, { title: string } | undefined>>;
-  type Action = Assert<Equal<typeof action.current, { saved: boolean } | undefined>>;
+  type OptionalData = Assert<
+    Equal<typeof optionalData.current, { title: string } | undefined>
+  >;
+  type Action = Assert<
+    Equal<typeof action.current, { saved: boolean } | undefined>
+  >;
   type ErrorValue = Assert<Equal<typeof error.current, unknown>>;
-  type DefaultData = Assert<Equal<ReturnType<typeof useLoaderData>["current"], unknown>>;
+  type DefaultData = Assert<
+    Equal<ReturnType<typeof useLoaderData>["current"], unknown>
+  >;
   // Internal box branding and setters are not part of the public handle contract.
   type HandleKeys = Assert<Equal<keyof RouterValue<unknown>, "current">>;
   type HrefHandle = Assert<Equal<typeof href, RouterValue<string>>>;
-  type SearchHandle = Assert<Equal<typeof search, RouterValue<URLSearchParams>>>;
-  const structuralHandle: typeof href = { get current() { return "/posts"; } };
+  type SearchHandle = Assert<
+    Equal<typeof search, RouterValue<URLSearchParams>>
+  >;
+  const structuralHandle: typeof href = {
+    get current() {
+      return "/posts";
+    },
+  };
 
   const title: string | undefined = data.current?.title;
   const matchedId: string | undefined = match.current?.params.id;
@@ -78,6 +162,9 @@ function consumer() {
   navigate("/posts");
   navigate(-1);
   revalidator.revalidate();
-  setSearch(previous => { previous.set("page", "2"); return previous; });
+  setSearch(previous => {
+    previous.set("page", "2");
+    return previous;
+  });
   useNavigationType().current;
 }

@@ -12,7 +12,7 @@
 
   let { routes, future, state }: Props = $props();
 
-  const rendered = useRoutesImpl(undefined, routes, undefined, () => state, future);
+  const rendered = useRoutesImpl(undefined, () => routes, undefined, () => state);
 </script>
 
 {@render rendered()}

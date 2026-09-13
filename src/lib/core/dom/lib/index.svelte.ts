@@ -10,6 +10,7 @@ import {
 import {
   DataRouterContext,
   DataRouterStateContext,
+  FetchersContext,
   NavigationContext,
   RouteContext,
   ViewTransitionContext,
@@ -31,11 +32,14 @@ import {
   createRouter,
   type Router as DataRouter,
   type RelativeRoutingType,
+  type Fetcher,
+  IDLE_FETCHER,
 } from "$lib/core/router/router.js";
 import { mapRouteProperties, hydrationRouteProperties } from "$lib/core/components/index.js";
 import {
   type SubmitTarget,
   type SubmitOptions,
+  type FetcherSubmitOptions,
   getFormSubmissionInfo,
   shouldProcessLinkClick,
   type URLSearchParamsInit,
@@ -51,6 +55,7 @@ import {
 } from "../../reactivity.svelte.js";
 import type { HTMLAttributeAnchorTarget } from "svelte/elements";
 import { warning } from "$lib/core/router/history.js";
+import type { SerializeFrom } from "../../types/route-data.js";
 
 ////////////////////////////////////////////////////////////////////////////////
 //#region Global Stuff
@@ -313,11 +318,67 @@ function useDataRouterContext(hookName: DataRouterHook) {
 function useDataRouterState(hookName: DataRouterStateHook) {
   let state = DataRouterStateContext.get();
   invariant(state.current, getDataRouterConsoleError(hookName));
-  return state.current;
+  return state;
 }
 
 let fetcherId = 0;
 let getUniqueFetcherId = () => `__${String(++fetcherId)}__`;
+
+export interface FetcherController<T = unknown> extends RouterValue<Fetcher<T>> {
+  readonly key: string;
+  load(href: string, options?: { flushSync?: boolean }): Promise<void>;
+  submit(target: SubmitTarget, options?: FetcherSubmitOptions): Promise<void>;
+}
+
+/**
+ * A mount-owned fetcher with a stable live `.current` snapshot and commands.
+ * Pass an options getter to change a shared key. Use the ordinary Svelte Form:
+ * `<Form navigate={false} fetcherKey={fetcher.key}>`. A React-style component
+ * factory (`fetcher.Form`) is unnecessary in Svelte.
+ */
+export function useFetcher<T = unknown>(
+  options: RouterInput<{ key?: string }> = {}
+): FetcherController<SerializeFrom<T>> {
+  const context = useDataRouterContext(DataRouterHook.UseFetcher);
+  const state = useDataRouterState(DataRouterStateHook.UseFetcher);
+  const data = FetchersContext.getOrThrow();
+  const routeId = useRouteId();
+  const submit = useSubmit();
+  const defaultKey = getUniqueFetcherId();
+  const key = $derived(readRouterInput(options).key || defaultKey);
+
+  $effect.pre(() => {
+    const router = context.current!.router;
+    const registeredKey = key;
+    router.getFetcher(registeredKey);
+    return () => router.deleteFetcher(registeredKey);
+  });
+
+  const value = box.with((): Fetcher<SerializeFrom<T>> => ({
+    ...(state.current!.fetchers.get(key) ?? IDLE_FETCHER),
+    data: data.get(key) as SerializeFrom<T> | undefined,
+  }));
+  return {
+    get current() { return value.current; },
+    get key() { return key; },
+    load: async (href, opts) => {
+      await context.current!.router.fetch(key, routeId.current, href, opts);
+    },
+    submit: async (target, opts) => {
+      await submit(target, { ...opts, navigate: false, fetcherKey: key });
+    },
+  };
+}
+
+/** Active operations only; completed data remains on its owning fetcher handle. */
+export function useFetchers(): RouterValue<(Fetcher<unknown> & { key: string })[]> {
+  const state = useDataRouterState(DataRouterStateHook.UseFetchers);
+  const fetchers = $derived(state.current!.fetchers);
+  return box.with(() => Array.from(fetchers, ([key, fetcher]) => ({ ...fetcher, key })));
+}
+
+export type { Fetcher } from "../../router/router.js";
+export type { FetcherSubmitOptions, SubmitOptions, SubmitTarget } from "../dom.js";
 
 export function useSubmit(): SubmitFunction {
   const context = useDataRouterContext(DataRouterHook.UseSubmit);
@@ -336,6 +397,7 @@ export function useSubmit(): SubmitFunction {
         formMethod: options.method || (method as HTMLFormMethod),
         formEncType: options.encType || (encType as FormEncType),
         flushSync: options.flushSync,
+        relative: options.relative,
       });
     } else {
       await router.navigate(options.action || action, {
@@ -349,6 +411,7 @@ export function useSubmit(): SubmitFunction {
         fromRouteId: currentRouteId.current,
         flushSync: options.flushSync,
         viewTransition: options.viewTransition,
+        relative: options.relative,
       });
     }
   };
@@ -534,6 +597,9 @@ export { default as HashRouter } from "./hash-router.svelte";
 export { default as Form } from "./form.svelte";
 export { default as Link } from "./link.svelte";
 export { default as NavLink } from "./nav-link.svelte";
+export { default as ScrollRestoration } from "./scroll-restoration.svelte";
+export { useScrollRestoration, type ScrollRestorationOptions } from "./use-scroll-restoration.svelte.js";
+export type { ScrollRestorationProps } from "./scroll-restoration.svelte";
 
 export type { MemoryRouterProps } from "./memory-router.svelte";
 export type { BrowserRouterProps } from "./browser-router.svelte";

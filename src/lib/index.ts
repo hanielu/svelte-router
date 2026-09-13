@@ -5,4 +5,5 @@ export * from "./core/dom/server/index.js";
 export * from "./core/hooks.svelte.js";
 export type { RouterValue, RouterInput } from "./core/reactivity.svelte.js";
 export type { RouteObject, DataRouteObject, NavigateOptions } from "./core/context.js";
+export type { SerializeFrom } from "./core/types/route-data.js";
 export * from "./core/router/utils.js";

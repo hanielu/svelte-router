@@ -36,6 +36,37 @@ upstream cases, not an expected one-to-one Svelte test count.
 | `useResolvedPath-test.tsx` / 11 | `path-hooks.svelte.test.ts` | String/object/hash parsing; dot/parent/child projections across static, parameter, splat, nested, pathless and descendant Routes. Related projection cases share full-record assertions. |
 | `use-revalidator-test.tsx` / 5 | `use-revalidator.svelte.test.ts` | Hydrated data and idle navigation during revalidation, child/parent boundary recovery, controller identity across navigation, command identity and exact state sequence across two revalidations. |
 | `dom/search-params-test.tsx` / 5 | `search-params.svelte.test.ts` | Form read/write, mutating updater, merged/removable defaults, mutation isolation during blocked browser navigation; also verifies proceeding commits the staged query. |
+| `dom/link-href-test.tsx` / 44; `link-click-test.tsx` / 12; `link-push-test.tsx` / 6; `useLinkClickHandler-test.tsx` / 4 | `link.svelte.test.ts` | Single/nested static, dynamic, index, pathless, splat, basename, descendant and path-relative tree matrices; over-traversal; external/protocol/search/hash/sibling hrefs; real browser/hash adapters; invalid URL/outside route; click listener/default prevention/native target/modifiers; push/replace/state. Additional live-input, download and Enter activation tests. |
+| `router/scroll-restoration-test.ts` / 19 | `scroll-engine.svelte.test.ts` | Initial hydration with/without data, saved Back/Forward, custom keys and both basenames, GET/POST redirects, uninterrupted revalidation, five reset-policy cases with both options and concurrent redirecting fetchers. Direct engines in Chromium replace the upstream fixture harness. |
+
+## Client data and renderer additions
+
+The following are bounded ports within larger upstream files, not completion of
+the whole data-browser/data-memory or engine directories:
+
+| Upstream case group | Svelte evidence / accounting |
+| --- | --- |
+| `dom/scroll-restoration-test.tsx`: three client cases | `scroll-restoration.svelte.test.ts`: window/loader readiness, navigation-key restoration and basename-relative custom keys. Four SSR inline-script cases are excluded from this explicitly client-only API, not claimed implemented. |
+| Svelte dashboard scroll additions | Element list→document→Back/Forward, async application readiness, abandoned restoration, unavailable target, independent sidebar, hashes, pagehide/storage denial/corruption and owner cleanup. Measurements are controlled scroll stubs inside Chromium; this is not a Ridu built-admin E2E claim. |
+| `dom/data-browser-router-test.tsx`: `useFetcher(s)` | `fetchers.svelte.test.ts` runs with isolated real browser **and** hash histories. The rows below map the upstream groups; renderer invocation counts/React component factories are intentionally adapted. |
+| load/submit; `?index`; four object serialization cases | Controlled `idle → loading/submitting → loading → idle`, data retained through pending work, action and loader results, full request form/JSON/text bodies, explicit parent/index GET/POST, omitted index action. |
+| load/deferred/submit/Form GET/Form POST errors; four hierarchy cases | Caller boundary versus target/parent, 404 and error text. Native Svelte await/catch replaces `Await` for a deferred rejection, retaining data and interactive UI; async-value hooks are not claimed. |
+| Form operation; six `navigate=false` permutations | Ordinary Svelte `Form` with the fetcher's key replaces `fetcher.Form`. GET/POST × navigation/unkeyed/keyed operations assert pending state, location identity/history key, loader/action/fetcher data and form payload. |
+| active fetchers/navigation/unmount; revalidating fetchers | Active key lists, navigation independence, retained data and completion; action-triggered fetcher revalidation; unmounted owners no longer revalidate. |
+| five key cases | Generated unique keys, shared key data, key change in a retained component, keys visible through `useFetchers`, final-owner cleanup and clean remount. |
+| eleven persistence cases | Load/submit/Form remain active until completion; action-triggered revalidation with/without remount; superseded redirect; unmounted and remounted load/action errors; no revalidation after unmount. Related assertions are grouped in sequences, not discarded. |
+| four basename cases | `load`, GET submit, POST submit, keyed Form resolve through the basename in both history adapters. |
+| `data-memory-router-test.tsx` operation promise ordering | Controlled fetcher promises remain pending through action/loader revalidation, with intermediate data/metadata assertions. Svelte render scheduling is tested separately, not equated to React render logs. |
+| `dom/flush-sync-navigations-test.tsx`: two fetcher cases | Initial synchronous update flag and later asynchronous flags; additionally prove pending DOM is immediately readable with Svelte `flushSync`. Navigation/submission-only counterparts are not claimed by these two tests. |
+| `data-memory-router-test.tsx`: error rendering groups | `errors-lazy.svelte.test.ts`: leaf/root hydration errors with component and real snippet; loader/action errors, Responses and null to leaf/root/default; root/index/shim 404; render failures, failure in error UI, Back/revalidation recovery and parent lifetime. Existing `data-value-handles` tests cover error replacement in retained views. Whole upstream file remains partial. |
+| `router/lazy-test.ts`: selected function initialization/error/navigation cases | Initial module and loader gates, nearest nested hydration snippet, lazy-exported boundary, rejected import and upstream cached-failure semantics, abandoned navigation and module reuse. Property-function, fetcher-lazy and full concurrency/SSR matrices remain unported. |
+
+The renderer regressions were reproduced before the fix: Component boundaries
+were called like snippets without props; initial fallbacks were absent; independent
+imperative mount roots prevented mixed declarative descendants reaching their
+ancestor data boundary. Native keyed branch components fix those defects while
+retaining all earlier navigation/outlet/retained-state tests. The scroll suite also
+found and ported the engine's missing uninterrupted-revalidation guard.
 
 `fixtures/navigation-cases.ts` spells out the actual route trees.
 `route-definitions.svelte` registers them through real Route components; data mode
@@ -83,10 +114,10 @@ The absent `useOutlet` return-value/fallback API is still a gap, not silently
 classified as React-only.
 
 Still outside the completed counterpart audit: full data-memory/browser/static
-router suites, Link/Form matrices, standalone useRoutes/Outlet suites, remaining
-matching/encoding/lifecycle suites, and the engine's `router/` tests. Some cover
-implemented but unqualified behaviour; others require absent APIs such as
-useOutlet, fetchers, Await or scroll restoration. Missing library features are
+router suites, remaining Form matrices, standalone useRoutes/Outlet suites,
+matching/encoding/lifecycle suites, and engine tests except the audited scroll
+suite. Some cover implemented but unqualified behaviour; others require absent
+APIs such as useOutlet or Await. Missing library features are
 gaps, not React-specific exclusions. Framework/server-runtime tests remain product
 non-goals in the parity plan.
 

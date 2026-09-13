@@ -1,14 +1,20 @@
 <script lang="ts">
   import type { Location } from "../router/history.js";
   import type { RevalidationState } from "../router/router.js";
-  import type { Snippet } from "svelte";
-  import { RouteContext, RouteErrorContext, type RouteContextObject } from "../context.js";
+  import type { Component, Snippet } from "svelte";
+  import DefaultErrorComponent from "./default-error-component.svelte";
+  import {
+    RouteContext,
+    RouteErrorContext,
+    type RouteContextObject,
+  } from "../context.js";
 
   type RenderErrorBoundaryProps = {
     location: Location;
     revalidation: RevalidationState;
     error: unknown;
-    component: Snippet;
+    ErrorBoundary?: Component | null;
+    errorElement?: Snippet | null;
     routeContext: RouteContextObject;
     children: Snippet;
   };
@@ -20,7 +26,8 @@
     location,
     revalidation,
     error: propError,
-    component,
+    ErrorBoundary,
+    errorElement,
     routeContext,
     children,
   }: RenderErrorBoundaryProps = $props();
@@ -43,24 +50,35 @@
    * Book-keeping for automatic reset logic (mirrors React logic)
    * ----------------------------------------------------------------*/
   let resetBoundary: (() => void) | undefined;
+  // Snapshots intentionally record the preceding location/revalidation cycle.
+  // svelte-ignore state_referenced_locally
   let prevLocation = location;
+  // svelte-ignore state_referenced_locally
   let prevRevalidation = revalidation;
 
   $effect(() => {
     const locationChanged = prevLocation !== location;
-    const revalidationFinished = prevRevalidation !== "idle" && revalidation === "idle";
+    const revalidationFinished =
+      prevRevalidation !== "idle" && revalidation === "idle";
 
     if (resetBoundary && (locationChanged || revalidationFinished)) {
       // Clear error on the boundary itself and in our store
-      resetBoundary();
+      const reset = resetBoundary;
       renderError = undefined;
       resetBoundary = undefined;
+      reset();
     }
 
     prevLocation = location;
     prevRevalidation = revalidation;
   });
 </script>
+
+{#snippet failure()}
+  {#if ErrorBoundary}<ErrorBoundary />
+  {:else if errorElement}{@render errorElement()}
+  {:else}<DefaultErrorComponent />{/if}
+{/snippet}
 
 <svelte:boundary
   onerror={(err, reset) => {
@@ -69,12 +87,12 @@
   }}
 >
   {#if error !== undefined}
-    {@render component?.()}
+    {@render failure()}
   {:else}
     {@render children?.()}
   {/if}
 
   {#snippet failed()}
-    {@render component?.()}
+    {@render failure()}
   {/snippet}
 </svelte:boundary>

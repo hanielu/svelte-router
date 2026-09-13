@@ -12,12 +12,13 @@
   import type { ViewTransition } from "../dom/global.js";
   import Router from "./router.svelte";
   import { SvelteMap } from "svelte/reactivity";
+  import { flushSync as svelteFlushSync } from "svelte";
   import { box } from "$lib/utils/box.svelte.js";
   import DataRoutes from "./data-routes.svelte";
 
   export interface RouterProviderProps {
     router: DataRouter;
-    flushSync?: (fn: () => unknown) => undefined;
+    flushSync?: (fn: () => unknown) => unknown;
   }
 
   class Deferred<T> {
@@ -47,7 +48,7 @@
 </script>
 
 <script lang="ts">
-  let { router, flushSync: reactDomFlushSyncImpl }: RouterProviderProps = $props();
+  let { router, flushSync: flushSyncImpl = svelteFlushSync }: RouterProviderProps = $props();
 
   let _state = $state.raw(router.state);
   let pendingState = $state.raw<RouterState>();
@@ -59,7 +60,7 @@
     currentLocation: Location;
     nextLocation: Location;
   }>();
-  let fetcherData = new SvelteMap<any, any>();
+  const fetcherData = new SvelteMap<string, unknown>();
 
   const setState: RouterSubscriber = (
     newState: RouterState,
@@ -71,16 +72,6 @@
       }
     });
     deletedFetchers.forEach(key => fetcherData.delete(key));
-
-    // warnOnce(
-    //   flushSync === false || reactDomFlushSyncImpl != null,
-    //   "You provided the `flushSync` option to a router update, " +
-    //     "but you are not using the `<RouterProvider>` from `react-router/dom` " +
-    //     "so `ReactDOM.flushSync()` is unavailable.  Please update your app " +
-    //     'to `import { RouterProvider } from "react-router/dom"` and ensure ' +
-    //     "you have `react-dom` installed as a dependency to use the " +
-    //     "`flushSync` option."
-    // );
 
     let isViewTransitionAvailable =
       router.window != null &&
@@ -97,19 +88,18 @@
     // If this isn't a view transition or it's not available in this browser,
     // just update and be done with it
     if (!viewTransitionOpts || !isViewTransitionAvailable) {
-      if (reactDomFlushSyncImpl && flushSync) {
-        reactDomFlushSyncImpl(() => (_state = newState));
+      if (flushSyncImpl && flushSync) {
+        flushSyncImpl(() => (_state = newState));
       } else {
-        // React.startTransition(() => setStateImpl(newState));
         _state = newState;
       }
       return;
     }
 
     // flushSync + startViewTransition
-    if (reactDomFlushSyncImpl && flushSync) {
+    if (flushSyncImpl && flushSync) {
       // Flush through the context to mark DOM elements as transition=ing
-      reactDomFlushSyncImpl(() => {
+      flushSyncImpl(() => {
         // Cancel any pending transitions
         if (transition) {
           renderDfd && renderDfd.resolve();
@@ -125,12 +115,12 @@
 
       // Update the DOM
       let t = router.window!.document.startViewTransition(() => {
-        reactDomFlushSyncImpl(() => (_state = newState));
+        flushSyncImpl(() => (_state = newState));
       });
 
       // Clean up after the animation completes
       t.finished.finally(() => {
-        reactDomFlushSyncImpl(() => {
+        flushSyncImpl(() => {
           renderDfd = undefined;
           transition = undefined;
           pendingState = undefined;
@@ -138,7 +128,7 @@
         });
       });
 
-      reactDomFlushSyncImpl(() => (transition = t));
+      flushSyncImpl(() => (transition = t));
       return;
     }
 

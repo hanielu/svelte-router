@@ -33,7 +33,9 @@
   // registrar exposed to direct children
   AddRouteContext.set([r => routes.push(r), () => rootChildIndex++, []]);
 
-  const renderedRoutes = useRoutes(children, routes, location);
+  // The declaration snippet/tree is mount-owned; a scoped location stays live.
+  // svelte-ignore state_referenced_locally
+  const renderedRoutes = useRoutes(children, routes, () => location);
 </script>
 
 {@render renderedRoutes()}

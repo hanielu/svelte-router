@@ -194,8 +194,9 @@ migrated Bun dependency workflow.
 `type-tests/consumer.ts` project. Keep it outside SvelteKit's `tests/` include so
 source and emitted global declarations do not collide in the application check.
 Assertions cover precise keys, generic data inference, absence, readonly handles,
-getter inputs, and command/controller shapes. Its `skipLibCheck` isolates consumer
-assertions from inherited declaration debt; it does not replace `check`.
+getter inputs, and command/controller shapes. It checks emitted dependencies with
+`skipLibCheck: false` and Bundler resolution, matching Svelte package consumers;
+it does not replace the source `check`.
 
 Do not run overlapping packaging/build commands that write the same generated
 directories. Use the runner's existing project scheduling rather than launching
@@ -225,7 +226,7 @@ case catches the same regression. Recheck that reproduction before upgrading;
 do not add router-specific event or styling workarounds to bypass it.
 
 The Svelte `5.57.0` upgrade exposed `state_referenced_locally` warnings in existing
-adapters in addition to the earlier 13 type errors. Audit each snapshot's intended
+adapters. Audit each snapshot's intended
 lifetime in a scoped follow-up; do not suppress the category or convert every
 initialization into a derivation. The upgrade also required current Svelte checking
 and declaration tooling. Probe those tools as well as the compiler when adopting
@@ -233,33 +234,14 @@ new syntax: an older transformer can accept markup but emit incorrectly scoped
 TypeScript. Tests must not inspect private compiler properties such as `__click`;
 exercise DOM interactions or capture a public command from a real mounted fixture.
 
-Foundation verification on 2026-09-13: all 63 tests in 13 files passed; the production
-site/package build and publint passed. `check` still reported the same 13 pre-upgrade
-type errors plus 39 snapshot-capture warnings. This records a bounded baseline,
-not permission to skip checks or a claim that the package is fully type-correct.
-
-After the `.current` migration, 72 tests in 15 files pass, as do `test:types` and
-the production/package build with publint. The remaining source gate has 12 errors
-in the copied `route-data.ts`/`route-module-annotations.ts` layer and 32 warnings.
-The migration removes the earlier generic-params error and several adapter
-snapshot warnings; it does not repair unrelated framework-mode type machinery.
-
-After the pinned upstream counterpart pass, 259 tests in 20 files pass, alongside
-`test:types`, the production build and publint. The source gate remains at the same
-12 errors and 32 warnings. See [the case audit](test-parity.md) for which upstream
-suites are complete and which remain unported. Route-matching expectations now
-retain complete element structure/content while excluding private compiler anchors;
-scoped-location assertions compare complete location records. Test fixtures are
-excluded from the packed package via `!dist/__tests__/**`.
-
-After consolidating readonly handles onto `box.with` and making all fixed-shape
-boxes class-backed, 266 tests in 21 files pass, alongside emitted consumer types,
-the production build and publint. The source gate remains at 12 errors and 32
-warnings. The seven box/context tests prove caching, dynamic dependency changes,
-immediate reads, readonly enforcement, shared prototype accessors with isolated
-state, deep mutation/replacement, conversion/flattening, provider isolation and
-writable-ref/effect cleanup; see the
-[context audit](svelte-reactivity.md#shared-projection-and-context-audit).
+The client-data pass removes the old source errors by deleting unused copied
+framework route-module machinery and defining client-result inference directly.
+Source checking has zero errors; existing snapshot warnings in declarative/static
+adapters remain a separate lifecycle audit, not permission to hide new warnings.
+Use [the case audit](test-parity.md) for current coverage rather than historical
+test counts. The retained seven box/context tests continue to protect cached
+class-backed handles; see the [context audit](svelte-reactivity.md#shared-projection-and-context-audit).
+Test fixtures are excluded from the packed package via `!dist/__tests__/**`.
 
 For changes confined to docs, check links, imports against actual exports, and the
 syntax of changed Svelte examples with the installed compiler. Check types or run
@@ -280,7 +262,7 @@ compiler syntax acceptance does not validate a `NavLink` prop's TypeScript type.
 Complete examples must include imports and distinguish module loaders from their
 registration on route objects. Give TypeScript snippets `lang="ts"`. Mark partial
 fragments and proposed APIs explicitly. Do not advertise absent APIs such as
-`useFetcher` as current exports or claim universal no-JavaScript functionality
+`Await` as current exports or claim universal no-JavaScript functionality
 from a client-only demo.
 
 Record general findings where the next contributor will look: context and snapshot

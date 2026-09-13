@@ -36,6 +36,10 @@ Read the narrowest relevant guide before changing a subsystem:
   missing features, evidence requirements, and implementation priorities.
 - [Upstream test audit](docs/test-parity.md): pinned source revision, case accounting,
   completed counterpart suites and intentional Svelte adaptations.
+- [Client data, errors and scroll](docs/client-data.md): fetcher/scroll contracts,
+  readiness, persistence, boundaries, and cached lazy-import failures.
+- [Ridu adoption assessment](docs/ridu-adoption.md): consumer integration and
+  unreleased dependency boundary; do not infer a production migration from tests.
 - [README](README.md): supported consumer entry points and examples.
 
 This guide and the subsystem guides define development rules. The parity plan
