@@ -216,16 +216,17 @@
     ...rest
   }: LinkProps & { ref?: HTMLAnchorElement | null } = $props();
 
-  let { basename } = NavigationContext.current;
+  const navigation = NavigationContext.get();
   let isAbsolute = $derived(typeof to === "string" && ABSOLUTE_URL_REGEX.test(to));
 
   // Rendered into <a href> for absolute URLs
   // let absoluteHref: string | undefined;
   // let isExternal = false;
 
-  const { absoluteHref, isExternal } = $derived.by(() => {
+  const { absoluteHref, isExternal, destination } = $derived.by(() => {
     let absoluteHref: string | undefined;
     let isExternal = false;
+    let destination = to;
 
     if (typeof to === "string" && isAbsolute) {
       // Render the absolute href server- and client-side
@@ -236,11 +237,11 @@
         try {
           let currentUrl = new URL(window.location.href);
           let targetUrl = to.startsWith("//") ? new URL(currentUrl.protocol + to) : new URL(to);
-          let path = stripBasename(targetUrl.pathname, basename);
+          let path = stripBasename(targetUrl.pathname, navigation.current.basename);
 
           if (targetUrl.origin === currentUrl.origin && path != null) {
             // Strip the protocol/origin/basename for same-origin absolute URLs
-            to = path + targetUrl.search + targetUrl.hash;
+            destination = path + targetUrl.search + targetUrl.hash;
           } else {
             isExternal = true;
           }
@@ -255,16 +256,16 @@
       }
     }
 
-    return { absoluteHref, isExternal };
+    return { absoluteHref, isExternal, destination };
   });
 
   // Rendered into <a href> for relative URLs
-  const href = useHref(() => to, () => ({ relative }));
+  const href = useHref(() => destination, () => ({ relative }));
   // let [shouldPrefetch, prefetchRef, prefetchHandlers] = usePrefetchBehavior();
 
   type OnClickEvent = Parameters<NonNullable<HTMLAnchorAttributes["onclick"]>>[0];
   let internalOnClick = useLinkClickHandler(
-    () => to,
+    () => destination,
     () => ({
       replace,
       state: stateProp,
@@ -284,7 +285,7 @@
   const mergedProps = $derived({
     ...rest,
     href: absoluteHref || href.current,
-    onclick: isExternal || reloadDocument ? onclick : handleClick,
+    onclick: isExternal || reloadDocument || (rest.download != null && rest.download !== false) ? onclick : handleClick,
     target,
     "data-discover": !isAbsolute && discover === "render" ? "true" : undefined,
     ...attachRef<HTMLAnchorElement>(node => (ref = node)),
