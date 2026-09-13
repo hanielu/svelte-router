@@ -37,14 +37,14 @@
     }
   },
   "peerDependencies": {
-    "svelte": "^5.0.0"
+    "svelte": "^5.57.0"
   },
   "devDependencies": {
     "@hvniel/vite-plugin-svelte-inline-component": "^0.0.17",
     "@iconify/json": "^2.2.351",
     "@sveltejs/adapter-static": "^3.0.9",
     "@sveltejs/kit": "^2.31.1",
-    "@sveltejs/package": "^2.4.1",
+    "@sveltejs/package": "^2.5.8",
     "@sveltejs/vite-plugin-svelte": "^6.1.2",
     "@types/node": "^24.1.0",
     "@unocss/preset-mini": "^66.3.3",
@@ -56,8 +56,8 @@
     "playwright": "^1.54.1",
     "publint": "^0.3.2",
     "shiki": "^3.9.1",
-    "svelte": "^5.38.1",
-    "svelte-check": "^4.3.1",
+    "svelte": "^5.57.0",
+    "svelte-check": "^4.7.6",
     "tailwind-merge": "^3.3.1",
     "tailwind-variants": "^1.0.0",
     "typescript": "^5.0.0",
